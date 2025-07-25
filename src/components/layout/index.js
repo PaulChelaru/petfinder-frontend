@@ -1,0 +1,2 @@
+// Layout Components
+export { default as PageLayout } from './PageLayout.vue'

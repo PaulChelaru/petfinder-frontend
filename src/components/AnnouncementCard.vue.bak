@@ -1,0 +1,337 @@
+<template>
+  <div :class="cardClass" class="rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-200">
+    <!-- Header with Type Icon and Accent -->
+    <div :class="headerClass" class="px-4 py-2 flex items-center justify-between">
+      <div class="flex items-center">
+        <svg :class="iconClass" class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+          <path v-if="announcement.type === 'lost'" d="M10 2L3 7v11a2 2 0 002 2h4v-6h2v6h4a2 2 0 002-2V7l-7-5z"/>
+          <path v-else d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        <span :class="typeTextClass" class="font-semibold text-sm uppercase tracking-wide">
+          {{ typeText }}
+        </span>
+      </div>
+      
+      <!-- Status Badge -->
+      <span 
+        :class="statusBadgeClass"
+        class="px-2 py-1 text-xs font-semibold rounded-full"
+      >
+        {{ statusText }}
+      </span>
+    </div>
+
+    <!-- Image Section -->
+    <div class="relative h-48 bg-gray-200">
+      <img 
+        v-if="announcement.images && announcement.images.length > 0"
+        :src="announcement.images[0]" 
+        :alt="announcement.title"
+        class="w-full h-full object-cover"
+        @error="imageError = true"
+      >
+      <div v-else class="flex items-center justify-center h-full text-gray-400">
+        <svg class="w-12 h-12" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd" />
+        </svg>
+      </div>
+    </div>
+
+    <!-- Content Section -->
+    <div class="p-4">
+      <!-- Pet Name and Type -->
+      <div class="flex items-start justify-between mb-2">
+        <h3 class="text-lg font-semibold text-gray-900 truncate flex-1">
+          {{ announcement.petName || 'Unknown Pet' }}
+        </h3>
+        <span class="ml-2 px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full capitalize">
+          {{ announcement.petType }}
+        </span>
+      </div>
+
+      <!-- Description -->
+      <p class="text-gray-600 text-sm mb-3 line-clamp-2">
+        {{ announcement.description }}
+      </p>
+
+      <!-- Last Seen Date (for lost pets) or Found Date -->
+      <div v-if="announcement.lastSeenDate" class="flex items-center text-gray-500 text-sm mb-2">
+        <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd" />
+        </svg>
+        <span>{{ lastSeenText }}: {{ formatDate(announcement.lastSeenDate) }}</span>
+      </div>
+
+      <!-- Location -->
+      <div class="flex items-center text-gray-500 text-sm mb-3">
+        <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" />
+        </svg>
+        <span>{{ locationText }}</span>
+      </div>
+
+      <!-- Posted Date -->
+      <div class="flex items-center justify-between text-xs text-gray-400 mb-3">
+        <span>Posted: {{ formattedDate }}</span>
+      </div>
+
+      <!-- Contact Info (if owner or resolved) -->
+      <div v-if="showContactInfo" class="border-t pt-3 mt-3">
+        <div class="text-sm text-gray-600">
+          <div v-if="announcement.contactInfo.phone" class="flex items-center mb-1">
+            <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
+            </svg>
+            <a :href="`tel:${announcement.contactInfo.phone}`" class="text-blue-600 hover:text-blue-800">
+              {{ announcement.contactInfo.phone }}
+            </a>
+          </div>
+          <div v-if="announcement.contactInfo.email" class="flex items-center">
+            <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+              <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+            </svg>
+            <a :href="`mailto:${announcement.contactInfo.email}`" class="text-blue-600 hover:text-blue-800">
+              {{ announcement.contactInfo.email }}
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex gap-2 mt-4">
+        <BaseButton 
+          @click="$emit('view', announcement)"
+          variant="outline"
+          size="sm"
+          class="flex-1"
+        >
+          View Details
+        </BaseButton>
+        
+        <BaseButton 
+          v-if="announcement.isOwner"
+          @click="$emit('edit', announcement)"
+          variant="secondary"
+          size="sm"
+        >
+          Edit
+        </BaseButton>
+        
+        <BaseButton 
+          v-if="announcement.isOwner && announcement.status === 'active'"
+          @click="$emit('resolve', announcement)"
+          :variant="announcement.type === 'lost' ? 'primary' : 'success'"
+          size="sm"
+        >
+          {{ resolveButtonText }}
+        </BaseButton>
+      </div>
+    </div>
+  </div>
+</template>
+        
+        <BaseButton 
+          v-if="announcement.isOwner"
+          @click="$emit('edit', announcement)"
+          variant="secondary"
+          size="sm"
+        >
+          Edit
+        </BaseButton>
+        
+        <BaseButton 
+          v-if="announcement.isOwner && announcement.status === 'active'"
+          @click="$emit('resolve', announcement)"
+          :variant="announcement.type === 'lost' ? 'primary' : 'success'"
+          size="sm"
+        >
+          {{ resolveButtonText }}
+        </BaseButton>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+import BaseButton from './BaseButton.vue';
+
+export default {
+  name: 'AnnouncementCard',
+  components: {
+    BaseButton
+  },
+  props: {
+    announcement: {
+      type: Object,
+      required: true
+    }
+  },
+  emits: ['view', 'edit', 'resolve'],
+  data() {
+    return {
+      imageError: false
+    };
+  },
+  computed: {
+    // Card styling based on type
+    cardClass() {
+      const baseClass = 'bg-white border-l-4';
+      if (this.announcement.type === 'lost') {
+        return `${baseClass} border-red-500`;
+      } else if (this.announcement.type === 'found') {
+        return `${baseClass} border-green-500`;
+      }
+      return `${baseClass} border-gray-300`;
+    },
+    
+    // Header styling based on type
+    headerClass() {
+      if (this.announcement.type === 'lost') {
+        return 'bg-red-50 border-b border-red-100';
+      } else if (this.announcement.type === 'found') {
+        return 'bg-green-50 border-b border-green-100';
+      }
+      return 'bg-gray-50 border-b border-gray-100';
+    },
+    
+    // Icon styling based on type
+    iconClass() {
+      if (this.announcement.type === 'lost') {
+        return 'text-red-600';
+      } else if (this.announcement.type === 'found') {
+        return 'text-green-600';
+      }
+      return 'text-gray-600';
+    },
+    
+    // Type text styling
+    typeTextClass() {
+      if (this.announcement.type === 'lost') {
+        return 'text-red-800';
+      } else if (this.announcement.type === 'found') {
+        return 'text-green-800';
+      }
+      return 'text-gray-800';
+    },
+    
+    statusBadgeClass() {
+      switch (this.announcement.status) {
+        case 'active':
+          return 'bg-green-500 text-white';
+        case 'resolved':
+          return 'bg-blue-500 text-white';
+        default:
+          return 'bg-gray-500 text-white';
+      }
+    },
+    
+    statusText() {
+      return this.announcement.status?.toUpperCase() || 'UNKNOWN';
+    },
+    
+    typeText() {
+      if (this.announcement.type === 'lost') {
+        return 'MISSING PET';
+      } else if (this.announcement.type === 'found') {
+        return 'FOUND PET';
+      }
+      return this.announcement.type?.toUpperCase() || 'UNKNOWN';
+    },
+    
+    lastSeenText() {
+      return this.announcement.type === 'lost' ? 'Last seen' : 'Found on';
+    },
+    
+    resolveButtonText() {
+      if (this.announcement.type === 'lost') {
+        return 'Mark Found';
+      } else if (this.announcement.type === 'found') {
+        return 'Mark Returned';
+      }
+      return 'Mark Resolved';
+    },
+    
+    locationText() {
+      // First try locationName from backend (preferred)
+      if (this.announcement.locationName) {
+        return this.announcement.locationName;
+      }
+      
+      // Build location from locationDetails if available
+      if (this.announcement.locationDetails) {
+        const parts = [];
+        
+        if (this.announcement.locationDetails.address) {
+          parts.push(this.announcement.locationDetails.address);
+        }
+        
+        if (this.announcement.locationDetails.city) {
+          parts.push(this.announcement.locationDetails.city);
+        }
+        
+        if (this.announcement.locationDetails.state) {
+          parts.push(this.announcement.locationDetails.state);
+        }
+        
+        if (parts.length > 0) {
+          return parts.join(', ');
+        }
+      }
+      
+      // Fallback to building location from location object (for backward compatibility)
+      if (this.announcement.location) {
+        const parts = [];
+        
+        if (this.announcement.location.address) {
+          parts.push(this.announcement.location.address);
+        }
+        
+        if (this.announcement.location.city) {
+          parts.push(this.announcement.location.city);
+        }
+        
+        if (this.announcement.location.state) {
+          parts.push(this.announcement.location.state);
+        }
+        
+        if (parts.length > 0) {
+          return parts.join(', ');
+        }
+      }
+      
+      return 'Location not specified';
+    },
+    
+    formattedDate() {
+      if (this.announcement.createdAt) {
+        return new Date(this.announcement.createdAt).toLocaleDateString();
+      }
+      return '';
+    },
+    
+    showContactInfo() {
+      return this.announcement.isOwner || 
+             this.announcement.status === 'resolved' ||
+             this.announcement.type === 'found';
+    }
+  },
+  
+  methods: {
+    formatDate(dateString) {
+      if (!dateString) return '';
+      return new Date(dateString).toLocaleDateString();
+    }
+  }
+};
+</script>
+
+<style scoped>
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+</style>

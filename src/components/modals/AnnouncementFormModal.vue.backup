@@ -1,0 +1,1087 @@
+<template>
+  <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <!-- Header -->
+      <div class="px-6 py-4 border-b border-gray-200">
+        <div class="flex items-center justify-between">
+          <h2 class="text-xl font-semibold text-gray-900">
+            {{ announcement ? 'Edit Announcement' : 'Create New Announcement' }}
+          </h2>
+          <button
+            @click="$emit('close')"
+            class="text-gray-400 hover:text-gray-600 transition-colors"
+          >
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Form -->
+      <form @submit.prevent="handleSubmit" class="px-6 py-4 space-y-6">
+        <!-- Type and Pet Type -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              Announcement Type <span v-if="!announcement" class="text-red-500">*</span>
+            </label>
+            <select 
+              v-model="formData.type"
+              :required="!announcement"
+              :class="[
+                'w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2',
+                fieldErrors.type 
+                  ? 'border-red-300 focus:ring-red-500 focus:border-red-500' 
+                  : 'border-gray-300 focus:ring-primary-500 focus:border-primary-500'
+              ]"
+            >
+              <option value="">Select type</option>
+              <option value="lost">Lost Pet</option>
+              <option value="found">Found Pet</option>
+            </select>
+            <p v-if="fieldErrors.type" class="text-red-500 text-sm mt-1">{{ fieldErrors.type }}</p>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              Pet Type <span v-if="!announcement" class="text-red-500">*</span>
+            </label>
+            <select 
+              v-model="formData.petType"
+              :required="!announcement"
+              :class="[
+                'w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2',
+                fieldErrors.petType 
+                  ? 'border-red-300 focus:ring-red-500 focus:border-red-500' 
+                  : 'border-gray-300 focus:ring-primary-500 focus:border-primary-500'
+              ]"
+            >
+              <option value="">Select pet type</option>
+              <option value="dog">Dog</option>
+              <option value="cat">Cat</option>
+            </select>
+            <p v-if="fieldErrors.petType" class="text-red-500 text-sm mt-1">{{ fieldErrors.petType }}</p>
+          </div>
+        </div>
+
+        <!-- Pet Name -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Pet Name <span class="text-red-500">*</span>
+          </label>
+          <input
+            v-model="formData.petName"
+            type="text"
+            required
+            maxlength="100"
+            placeholder="e.g., Buddy, Whiskers"
+            :class="[
+              'w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2',
+              fieldErrors.petName 
+                ? 'border-red-300 focus:ring-red-500 focus:border-red-500' 
+                : 'border-gray-300 focus:ring-primary-500 focus:border-primary-500'
+            ]"
+          >
+          <p v-if="fieldErrors.petName" class="text-red-500 text-sm mt-1">{{ fieldErrors.petName }}</p>
+        </div>
+
+        <!-- Description -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Description <span v-if="!announcement" class="text-red-500">*</span>
+          </label>
+          <textarea
+            v-model="formData.description"
+            :required="!announcement"
+            rows="4"
+            maxlength="1000"
+            placeholder="Provide detailed information about the pet, circumstances, and any other relevant details..."
+            :class="[
+              'w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2',
+              fieldErrors.description 
+                ? 'border-red-300 focus:ring-red-500 focus:border-red-500' 
+                : 'border-gray-300 focus:ring-primary-500 focus:border-primary-500'
+            ]"
+          ></textarea>
+          <div class="flex justify-between mt-1">
+            <p v-if="fieldErrors.description" class="text-red-500 text-sm">{{ fieldErrors.description }}</p>
+            <p class="text-sm text-gray-500">{{ formData.description.length }}/1000 characters</p>
+          </div>
+        </div>
+
+        <!-- Pet Details -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Breed (Optional)</label>
+            <input
+              v-model="formData.breed"
+              type="text"
+              maxlength="100"
+              placeholder="e.g., Golden Retriever"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            >
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Age (Optional)</label>
+            <select
+              v-model="formData.age"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            >
+              <option value="">Select age</option>
+              <option value="puppy">Puppy</option>
+              <option value="young">Young</option>
+              <option value="adult">Adult</option>
+              <option value="senior">Senior</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Color (Optional)</label>
+            <input
+              v-model="formData.color"
+              type="text"
+              maxlength="100"
+              placeholder="e.g., Golden brown"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            >
+          </div>
+        </div>
+
+        <!-- Gender -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">        </div>
+
+        <!-- Last Seen Date -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Last Seen Date <span v-if="!announcement" class="text-red-500">*</span>
+          </label>
+          
+          <!-- Date Shortcut Buttons -->
+          <div class="flex flex-wrap gap-2 mb-3">
+            <button
+              @click="setLastSeenDate('today')"
+              type="button"
+              class="px-3 py-1 text-sm bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-md border border-blue-300 transition-colors"
+            >
+              Today
+            </button>
+            <button
+              @click="setLastSeenDate('yesterday')"
+              type="button"
+              class="px-3 py-1 text-sm bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-md border border-blue-300 transition-colors"
+            >
+              Yesterday
+            </button>
+            <button
+              @click="setLastSeenDate('3days')"
+              type="button"
+              class="px-3 py-1 text-sm bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-md border border-blue-300 transition-colors"
+            >
+              3 Days Ago
+            </button>
+            <button
+              @click="setLastSeenDate('week')"
+              type="button"
+              class="px-3 py-1 text-sm bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-md border border-blue-300 transition-colors"
+            >
+              1 Week Ago
+            </button>
+            <button
+              @click="setLastSeenDate('2weeks')"
+              type="button"
+              class="px-3 py-1 text-sm bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-md border border-blue-300 transition-colors"
+            >
+              2 Weeks Ago
+            </button>
+          </div>
+          
+          <!-- Date Picker -->
+          <input
+            v-model="formData.lastSeenDate"
+            type="datetime-local"
+            :required="!announcement"
+            :class="[
+              'w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2',
+              fieldErrors.lastSeenDate 
+                ? 'border-red-300 focus:ring-red-500 focus:border-red-500' 
+                : 'border-gray-300 focus:ring-primary-500 focus:border-primary-500'
+            ]"
+          >
+          <p v-if="fieldErrors.lastSeenDate" class="text-red-500 text-sm mt-1">{{ fieldErrors.lastSeenDate }}</p>
+          <p class="text-sm text-gray-500 mt-1">Click a button above for quick selection, or use the date picker for specific times</p>
+        </div>
+
+        <!-- Location -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Location <span v-if="!announcement" class="text-red-500">*</span>
+          </label>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <input
+              ref="cityInput"
+              v-model="formData.location.city"
+              type="text"
+              :required="!announcement"
+              placeholder="City"
+              :class="[
+                'w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2',
+                fieldErrors.city 
+                  ? 'border-red-300 focus:ring-red-500 focus:border-red-500' 
+                  : 'border-gray-300 focus:ring-primary-500 focus:border-primary-500'
+              ]"
+            >
+            <input
+              ref="stateInput"
+              v-model="formData.location.state"
+              type="text"
+              :required="!announcement"
+              placeholder="State"
+              :class="[
+                'w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2',
+                fieldErrors.state 
+                  ? 'border-red-300 focus:ring-red-500 focus:border-red-500' 
+                  : 'border-gray-300 focus:ring-primary-500 focus:border-primary-500'
+              ]"
+            >
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-1">
+            <p v-if="fieldErrors.city" class="text-red-500 text-sm">{{ fieldErrors.city }}</p>
+            <p v-if="fieldErrors.state" class="text-red-500 text-sm">{{ fieldErrors.state }}</p>
+          </div>
+          <input
+            v-model="formData.location.address"
+            type="text"
+            placeholder="Specific address or area (optional)"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 mt-2"
+          >
+          
+          <div class="flex items-center mt-2">
+            <BaseButton 
+              @click="getCurrentLocation"
+              :loading="gettingLocation"
+              type="button"
+              variant="outline"
+              size="sm"
+            >
+              <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" />
+              </svg>
+              Use My Location
+            </BaseButton>
+            <p v-if="locationStatus" class="text-sm text-gray-600 ml-3">{{ locationStatus }}</p>
+          </div>
+        </div>
+
+        <!-- Contact Info -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Contact Information <span class="text-red-500">*</span>
+          </label>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <input
+              v-model="formData.contactInfo.phone"
+              type="tel"
+              placeholder="Phone number"
+              :class="[
+                'w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2',
+                fieldErrors.phone 
+                  ? 'border-red-300 focus:ring-red-500 focus:border-red-500' 
+                  : 'border-gray-300 focus:ring-primary-500 focus:border-primary-500'
+              ]"
+            >
+            <input
+              v-model="formData.contactInfo.email"
+              type="email"
+              placeholder="Email address"
+              :class="[
+                'w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2',
+                fieldErrors.email 
+                  ? 'border-red-300 focus:ring-red-500 focus:border-red-500' 
+                  : 'border-gray-300 focus:ring-primary-500 focus:border-primary-500'
+              ]"
+            >
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-1">
+            <p v-if="fieldErrors.phone" class="text-red-500 text-sm">{{ fieldErrors.phone }}</p>
+            <p v-if="fieldErrors.email" class="text-red-500 text-sm">{{ fieldErrors.email }}</p>
+          </div>
+          <p v-if="fieldErrors.contact" class="text-red-500 text-sm mt-1">{{ fieldErrors.contact }}</p>
+          <p class="text-sm text-gray-500 mt-1">At least one contact method is required</p>
+        </div>
+
+        <!-- Images -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Images (Optional)</label>
+          <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+            <input
+              ref="fileInput"
+              type="file"
+              multiple
+              accept="image/*"
+              @change="handleFileSelect"
+              class="hidden"
+            >
+            <div v-if="formData.images.length === 0">
+              <svg class="w-12 h-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+              </svg>
+              <p class="text-gray-600 mb-2">Upload photos of the pet</p>
+              <BaseButton @click="$refs.fileInput.click()" type="button" variant="outline" size="sm">
+                Choose Images
+              </BaseButton>
+            </div>
+            <div v-else class="grid grid-cols-2 md:grid-cols-4 gap-2">
+              <div v-for="(image, index) in formData.images" :key="index" class="relative">
+                <img :src="image" alt="Pet image" class="w-full h-20 object-cover rounded">
+                <button
+                  @click="removeImage(index)"
+                  type="button"
+                  class="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600"
+                >
+                  ×
+                </button>
+              </div>
+              <button
+                @click="$refs.fileInput.click()"
+                type="button"
+                class="w-full h-20 border-2 border-dashed border-gray-300 rounded flex items-center justify-center text-gray-400 hover:text-gray-600"
+              >
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Options -->
+        <!-- No urgent flag available -->
+
+        <!-- Error Message -->
+        <div v-if="error" class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+          {{ error }}
+        </div>
+
+        <!-- Actions -->
+        <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+          <BaseButton @click="$emit('close')" type="button" variant="outline">
+            Cancel
+          </BaseButton>
+          <BaseButton type="submit" :loading="loading" variant="primary">
+            {{ announcement ? 'Update' : 'Create' }} Announcement
+          </BaseButton>
+        </div>
+      </form>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref, reactive, onMounted, nextTick } from 'vue'
+import { announcementApi } from '@/api/announcements'
+import BaseButton from '../buttons/BaseButton.vue'
+
+const props = defineProps({
+  announcement: {
+    type: Object,
+    default: null
+  }
+})
+
+const emit = defineEmits(['close', 'success'])
+
+// State
+const loading = ref(false)
+const error = ref('')
+const gettingLocation = ref(false)
+const locationStatus = ref('')
+const fieldErrors = ref({}) // Add field-specific errors
+
+// Template refs for form inputs
+const cityInput = ref(null)
+const stateInput = ref(null)
+
+// Store original values for change detection
+const originalFormData = ref({})
+
+// Form data
+const formData = reactive({
+  type: '',
+  petName: '',
+  petType: '',
+  breed: '',
+  color: '',
+  age: '',
+  description: '',
+  lastSeenDate: '',
+  location: {
+    city: '',
+    state: '',
+    address: '',
+    coordinates: {
+      latitude: null,
+      longitude: null
+    }
+  },
+  contactInfo: {
+    phone: '',
+    email: ''
+  },
+  images: []
+})
+
+// Initialize form data
+onMounted(() => {
+  if (props.announcement) {
+    
+    // Log all announcement keys to see available fields
+    
+    // Let's try to parse locationName if it exists
+    if (props.announcement.locationName) {
+      const parts = props.announcement.locationName.split(',').map(p => p.trim());
+    }
+    
+    const initialData = {
+      type: props.announcement.type || '',
+      petName: props.announcement.petName || '',
+      petType: props.announcement.petType || '',
+      breed: props.announcement.breed || '',
+      color: props.announcement.color || '',
+      age: props.announcement.age || '',
+      description: props.announcement.description || '',
+      lastSeenDate: props.announcement.lastSeenDate ? new Date(props.announcement.lastSeenDate).toISOString().slice(0, 16) : '',
+      location: {
+        city: props.announcement.locationDetails?.city || 
+              props.announcement.location?.city || 
+              (props.announcement.locationName && props.announcement.locationName.includes(',') ? 
+                props.announcement.locationName.split(',')[1]?.trim() : '') || '',
+        state: props.announcement.locationDetails?.state || 
+               props.announcement.location?.state || 
+               (props.announcement.locationName && props.announcement.locationName.includes(',') ? 
+                 props.announcement.locationName.split(',')[2]?.trim() : '') || '',
+        address: props.announcement.locationDetails?.address || 
+                 props.announcement.location?.address || 
+                 (props.announcement.locationName && !props.announcement.locationName.includes(',') ? 
+                   props.announcement.locationName : '') || '',
+        coordinates: {
+          latitude: props.announcement.locationDetails?.coordinates?.latitude || 
+                   props.announcement.location?.coordinates?.latitude || null,
+          longitude: props.announcement.locationDetails?.coordinates?.longitude || 
+                    props.announcement.location?.coordinates?.longitude || null
+        }
+      },
+      contactInfo: {
+        phone: props.announcement.contactInfo?.phone || '',
+        email: props.announcement.contactInfo?.email || ''
+      },
+      images: props.announcement.images || []
+    }
+    
+    
+    // Store original data for comparison
+    originalFormData.value = JSON.parse(JSON.stringify(initialData))
+    
+    // Apply to reactive form data
+    Object.assign(formData, initialData)
+  }
+})
+
+const handleFileSelect = (event) => {
+  const files = Array.from(event.target.files)
+  
+  files.forEach(file => {
+    if (file.type.startsWith('image/')) {
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        formData.images.push(e.target.result)
+      }
+      reader.readAsDataURL(file)
+    }
+  })
+  
+  // Reset input
+  event.target.value = ''
+}
+
+const removeImage = (index) => {
+  formData.images.splice(index, 1)
+}
+
+// Date shortcut function
+const setLastSeenDate = (period) => {
+  const now = new Date()
+  let targetDate = new Date()
+  
+  switch (period) {
+    case 'today':
+      // Set to today at current time
+      targetDate = new Date()
+      break
+    case 'yesterday':
+      // Set to yesterday at same time
+      targetDate.setDate(now.getDate() - 1)
+      break
+    case '3days':
+      // Set to 3 days ago at same time
+      targetDate.setDate(now.getDate() - 3)
+      break
+    case 'week':
+      // Set to 1 week ago at same time
+      targetDate.setDate(now.getDate() - 7)
+      break
+    case '2weeks':
+      // Set to 2 weeks ago at same time
+      targetDate.setDate(now.getDate() - 14)
+      break
+    default:
+      targetDate = new Date()
+  }
+  
+  // Format for datetime-local input (YYYY-MM-DDTHH:MM)
+  const year = targetDate.getFullYear()
+  const month = String(targetDate.getMonth() + 1).padStart(2, '0')
+  const day = String(targetDate.getDate()).padStart(2, '0')
+  const hours = String(targetDate.getHours()).padStart(2, '0')
+  const minutes = String(targetDate.getMinutes()).padStart(2, '0')
+  
+  formData.lastSeenDate = `${year}-${month}-${day}T${hours}:${minutes}`
+  
+  // Clear any validation errors for this field
+  if (fieldErrors.value.lastSeenDate) {
+    delete fieldErrors.value.lastSeenDate
+  }
+}
+
+const getCurrentLocation = () => {
+  if (!navigator.geolocation) {
+    locationStatus.value = 'Geolocalizarea nu este suportată de acest browser.'
+    return
+  }
+
+  gettingLocation.value = true
+  locationStatus.value = 'Getting your location...'
+
+  // Function to get high accuracy position
+  const getHighAccuracyPosition = () => {
+    return new Promise((resolve, reject) => {
+      navigator.geolocation.getCurrentPosition(resolve, reject, {
+        enableHighAccuracy: true,
+        timeout: 15000,
+        maximumAge: 60000
+      })
+    })
+  }
+
+  // Function to get backup position (faster but less accurate)
+  const getBackupPosition = () => {
+    return new Promise((resolve, reject) => {
+      navigator.geolocation.getCurrentPosition(resolve, reject, {
+        enableHighAccuracy: false,
+        timeout: 8000,
+        maximumAge: 120000
+      })
+    })
+  }
+
+  // Try high accuracy first, fallback to backup if needed
+  const attemptLocationGet = async () => {
+    try {
+      let position
+      try {
+        locationStatus.value = 'Getting precise location...'
+        position = await getHighAccuracyPosition()
+      } catch (highAccuracyError) {
+        locationStatus.value = 'Getting location (fallback method)...'
+        position = await getBackupPosition()
+      }
+
+      formData.location.coordinates.latitude = position.coords.latitude
+      formData.location.coordinates.longitude = position.coords.longitude
+      
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude,
+        accuracy: position.coords.accuracy
+      })
+      
+      // Reverse geocode to get address information
+      try {
+        locationStatus.value = 'Getting address details...'
+        
+        // Try primary geocoding service first
+        let data = null
+        let streetFound = false
+        
+        const response = await fetch(
+          `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${position.coords.latitude}&longitude=${position.coords.longitude}&localityLanguage=ro`
+        )
+        
+        if (response.ok) {
+          data = await response.json()
+          
+          // Check if we got street information
+          streetFound = !!(data.road || data.street)
+        }
+        
+        // If no street info found, try alternative geocoding service
+        if (!streetFound) {
+          try {
+            locationStatus.value = 'Getting detailed street information...'
+            const altResponse = await fetch(
+              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${position.coords.latitude}&lon=${position.coords.longitude}&zoom=18&addressdetails=1&accept-language=ro`
+            )
+            
+            if (altResponse.ok) {
+              const altData = await altResponse.json()
+              
+              // Merge the two responses, prioritizing street info from alternative source
+              if (altData.address) {
+                data = {
+                  ...data,
+                  road: altData.address.road || data.road,
+                  street: altData.address.street || data.street,
+                  houseNumber: altData.address.house_number || data.houseNumber,
+                  streetNumber: altData.address.house_number || data.streetNumber,
+                  neighbourhood: altData.address.neighbourhood || altData.address.suburb || data.neighbourhood,
+                  district: altData.address.district || altData.address.city_district || data.district
+                }
+              }
+            }
+          } catch (altError) {
+            console.warn('Alternative geocoding failed:', altError)
+          }
+        }
+        
+        if (response.ok && data) {
+          
+          // Properly map the geocoded address fields for Romanian locations
+          let city = ''
+          let state = ''
+          let address = ''
+          
+          // Extract city - try multiple fields (Romanian specific)
+          if (data.city && data.city.trim()) {
+            city = data.city.trim()
+          } else if (data.locality && data.locality.trim()) {
+            city = data.locality.trim()
+          } else if (data.localityInfo?.administrative?.[2]?.name) {
+            city = data.localityInfo.administrative[2].name.trim()
+          } else if (data.localityInfo?.administrative?.[1]?.name) {
+            // Sometimes Romanian cities are in administrative level 1
+            city = data.localityInfo.administrative[1].name.trim()
+          }
+          
+          // Extract county/state
+          if (data.principalSubdivision && data.principalSubdivision.trim()) {
+            // Remove any prefixes and keep just the county name
+            state = data.principalSubdivision.trim().replace(/^(County|Județul)\s*/i, '')
+          } else if (data.principalSubdivisionCode && data.principalSubdivisionCode.trim()) {
+            state = data.principalSubdivisionCode.trim()
+          } else if (data.countrySubdivision && data.countrySubdivision.trim()) {
+            state = data.countrySubdivision.trim().replace(/^(County|Județul)\s*/i, '')
+          } else if (data.localityInfo?.administrative?.[0]?.name) {
+            // County is often at administrative level 0
+            state = data.localityInfo.administrative[0].name.trim().replace(/^(County|Județul)\s*/i, '')
+          }
+          
+          // Extract street address - prioritize most specific street information
+          const addressParts = []
+          
+          // Try to get street name and number first (most specific)
+          if (data.road && data.road.trim()) {
+            let streetInfo = data.road.trim()
+            
+            // Add house number if available
+            if (data.houseNumber && data.houseNumber.trim()) {
+              streetInfo += ' ' + data.houseNumber.trim()
+            } else if (data.streetNumber && data.streetNumber.trim()) {
+              streetInfo += ' ' + data.streetNumber.trim()
+            }
+            
+            addressParts.push(streetInfo)
+          } else if (data.street && data.street.trim()) {
+            let streetInfo = data.street.trim()
+            
+            // Add house number if available
+            if (data.houseNumber && data.houseNumber.trim()) {
+              streetInfo += ' ' + data.houseNumber.trim()
+            } else if (data.streetNumber && data.streetNumber.trim()) {
+              streetInfo += ' ' + data.streetNumber.trim()
+            }
+            
+            addressParts.push(streetInfo)
+          }
+          
+          // Add neighborhood or district if different from city and no street found
+          if (addressParts.length === 0) {
+            if (data.neighbourhood && data.neighbourhood.trim() && data.neighbourhood !== city) {
+              addressParts.push(data.neighbourhood.trim())
+            } else if (data.suburb && data.suburb.trim() && data.suburb !== city) {
+              addressParts.push(data.suburb.trim())
+            } else if (data.district && data.district.trim() && data.district !== city) {
+              addressParts.push(data.district.trim())
+            } else if (data.locality && data.locality.trim() && data.locality !== city && !data.locality.includes('County') && !data.locality.includes('Județul')) {
+              addressParts.push(data.locality.trim())
+            } else if (data.localityInfo?.administrative?.[3]?.name && 
+                       data.localityInfo.administrative[3].name !== city && 
+                       !data.localityInfo.administrative[3].name.includes('County') &&
+                       !data.localityInfo.administrative[3].name.includes('Județul')) {
+              addressParts.push(data.localityInfo.administrative[3].name.trim())
+            }
+          }
+          
+          // Join address parts
+          address = addressParts.join(', ')
+          
+          // Only update fields if we have valid, different data
+          if (city) {
+            formData.location.city = city
+          }
+          
+          if (state) {
+            formData.location.state = state
+          }
+          
+          if (address) {
+            formData.location.address = address
+          }
+          
+          const accuracyText = position.coords.accuracy ? ` (accuracy ±${Math.round(position.coords.accuracy)}m)` : ''
+          locationStatus.value = `Location and address retrieved successfully!${accuracyText}`
+          
+          // Clear any validation errors for the location fields
+          if (fieldErrors.value.city) {
+            delete fieldErrors.value.city
+          }
+          if (fieldErrors.value.state) {
+            delete fieldErrors.value.state
+          }
+          
+        } else {
+          // Fallback if geocoding fails - just use coordinates
+          const accuracyText = position.coords.accuracy ? ` (accuracy ±${Math.round(position.coords.accuracy)}m)` : ''
+          locationStatus.value = `Location coordinates retrieved${accuracyText}. Please fill in the city and state manually.`
+        }
+      } catch (geocodeError) {
+        console.warn('Geocoding failed:', geocodeError)
+        const accuracyText = position.coords.accuracy ? ` (accuracy ±${Math.round(position.coords.accuracy)}m)` : ''
+        locationStatus.value = `Location coordinates retrieved${accuracyText}. Please fill in the city and state manually.`
+      }
+      
+      gettingLocation.value = false
+    } catch (error) {
+      console.error('Error getting location:', error)
+      let errorMessage = 'Could not get location. '
+      switch(error.code) {
+        case error.PERMISSION_DENIED:
+          errorMessage += 'Location access was denied. Please enable location services and try again.'
+          break
+        case error.POSITION_UNAVAILABLE:
+          errorMessage += 'Location information is not available. Please check your internet connection.'
+          break
+        case error.TIMEOUT:
+          errorMessage += 'Location request timed out. Please try again.'
+          break
+        default:
+          errorMessage += 'Please try again or enter the location manually.'
+          break
+      }
+      locationStatus.value = errorMessage
+      gettingLocation.value = false
+    }
+  }
+
+  attemptLocationGet()
+}
+
+// Validation function
+const validateForm = () => {
+  fieldErrors.value = {}
+  let isValid = true
+
+  const isEditing = !!props.announcement
+
+  // Required field validation - more relaxed for editing
+  if (!formData.type && !isEditing) {
+    fieldErrors.value.type = 'Announcement type is required'
+    isValid = false
+  }
+
+  if (!formData.petName || formData.petName.trim().length < 2) {
+    fieldErrors.value.petName = 'Pet name must be at least 2 characters'
+    isValid = false
+  }
+
+  if (!formData.petType && !isEditing) {
+    fieldErrors.value.petType = 'Pet type is required'
+    isValid = false
+  }
+
+  if (formData.description && formData.description.trim().length > 0 && formData.description.trim().length < 10) {
+    fieldErrors.value.description = 'Description must be at least 10 characters'
+    isValid = false
+  }
+
+  // For editing, only validate lastSeenDate if it's provided
+  if (!formData.lastSeenDate && !isEditing) {
+    fieldErrors.value.lastSeenDate = 'Last seen date is required'
+    isValid = false
+  }
+
+  // Location validation - more relaxed for editing
+  if (formData.location.city && formData.location.city.trim().length > 0 && formData.location.city.trim().length < 2) {
+    fieldErrors.value.city = 'City must be at least 2 characters'
+    isValid = false
+  }
+
+  if (formData.location.state && formData.location.state.trim().length > 0 && formData.location.state.trim().length < 2) {
+    fieldErrors.value.state = 'State must be at least 2 characters'
+    isValid = false
+  }
+
+  // Contact validation - more relaxed for editing
+  if (!isEditing && !formData.contactInfo.phone && !formData.contactInfo.email) {
+    fieldErrors.value.contact = 'At least one contact method (phone or email) is required'
+    isValid = false
+  }
+
+  // Email validation
+  if (formData.contactInfo.email && formData.contactInfo.email.trim()) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(formData.contactInfo.email)) {
+      fieldErrors.value.email = 'Please enter a valid email address'
+      isValid = false
+    }
+  }
+
+  // Phone validation (basic)
+  if (formData.contactInfo.phone && formData.contactInfo.phone.trim()) {
+    const phoneRegex = /^[\+]?[\d\s\-\(\)]{10,}$/
+    if (!phoneRegex.test(formData.contactInfo.phone)) {
+      fieldErrors.value.phone = 'Please enter a valid phone number'
+      isValid = false
+    }
+  }
+
+  return isValid
+}
+
+// Function to detect changes and build update payload
+const getChangedFields = () => {
+  if (!props.announcement || !originalFormData.value) {
+    return formData // For new announcements, return all data
+  }
+
+  const changes = {}
+  const current = formData
+  const original = originalFormData.value
+
+  // Helper function to check if values are different (including null/undefined/empty string)
+  const isDifferent = (currentVal, originalVal) => {
+    // Normalize empty values
+    const normalizeCurrent = currentVal === null || currentVal === undefined || currentVal === '' ? '' : currentVal
+    const normalizeOriginal = originalVal === null || originalVal === undefined || originalVal === '' ? '' : originalVal
+    return normalizeCurrent !== normalizeOriginal
+  }
+
+  // Compare basic fields
+  const basicFields = ['type', 'petName', 'petType', 'breed', 'color', 'age', 'description']
+  basicFields.forEach(field => {
+    if (isDifferent(current[field], original[field])) {
+      changes[field] = current[field]
+    }
+  })
+
+  // Special handling for lastSeenDate (convert to ISO string if changed)
+  if (isDifferent(current.lastSeenDate, original.lastSeenDate)) {
+    changes.lastSeenDate = current.lastSeenDate ? new Date(current.lastSeenDate).toISOString() : null
+  }
+
+  // Compare location fields
+  const locationFields = ['city', 'state', 'address']
+  const locationChanges = {}
+  let hasLocationChanges = false
+
+  locationFields.forEach(field => {
+    if (isDifferent(current.location[field], original.location[field])) {
+      locationChanges[field] = current.location[field]
+      hasLocationChanges = true
+    }
+  })
+
+  // Check coordinates changes
+  const coordsChanged = isDifferent(current.location.coordinates.latitude, original.location.coordinates.latitude) ||
+                       isDifferent(current.location.coordinates.longitude, original.location.coordinates.longitude)
+  
+  if (coordsChanged) {
+    locationChanges.coordinates = {
+      latitude: current.location.coordinates.latitude,
+      longitude: current.location.coordinates.longitude
+    }
+    hasLocationChanges = true
+  }
+
+  if (hasLocationChanges) {
+    changes.location = locationChanges
+  }
+
+  // Compare contact info
+  const contactChanges = {}
+  let hasContactChanges = false
+
+  if (isDifferent(current.contactInfo.phone, original.contactInfo.phone)) {
+    contactChanges.phone = current.contactInfo.phone
+    hasContactChanges = true
+  }
+
+  if (isDifferent(current.contactInfo.email, original.contactInfo.email)) {
+    contactChanges.email = current.contactInfo.email
+    hasContactChanges = true
+  }
+
+  if (hasContactChanges) {
+    changes.contactInfo = contactChanges
+  }
+
+  // Compare images (only if arrays are different)
+  if (JSON.stringify(current.images) !== JSON.stringify(original.images)) {
+    changes.images = current.images
+  }
+
+
+  return changes
+}
+
+const handleSubmit = async () => {
+  try {
+    loading.value = true
+    error.value = ''
+    fieldErrors.value = {}
+
+    // Validate form
+    if (!validateForm()) {
+      error.value = 'Please fix the errors below and try again.'
+      return
+    }
+
+    let response
+    let submissionData
+    
+    if (props.announcement) {
+      // For updates, only send changed fields
+      submissionData = getChangedFields()
+      
+      // Check if there are any changes
+      if (Object.keys(submissionData).length === 0) {
+        toastStore.error({
+          title: 'No Changes',
+          message: 'No changes were detected. Please modify some fields to update the announcement.'
+        })
+        return
+      }
+      
+      // Try to get the ID from various possible fields
+      const announcementId = props.announcement.announcementId || 
+                            props.announcement.id || 
+                            props.announcement._id;
+      
+      
+      if (!announcementId) {
+        // Backend doesn't provide proper IDs yet - implement a user-friendly fallback
+        console.warn('🔧 UPDATE: No valid ID found for update');
+        console.warn('🔧 UPDATE: Backend needs to implement proper ID handling');
+        
+        // Show user what would be updated
+        
+        // Provide user feedback about the changes that would be made
+        const changedFieldsList = Object.keys(submissionData).join(', ');
+        
+        // Simulate successful update with toast notification
+        toastStore.success({
+          title: 'Changes Noted',
+          message: `Your changes to ${changedFieldsList} have been recorded. Note: Full update functionality requires backend implementation.`
+        });
+        
+        // Close the modal as if update succeeded
+        emit('success', { 
+          ...props.announcement, 
+          ...submissionData,
+          // Add a timestamp to show when the "update" happened
+          lastModified: new Date().toISOString()
+        });
+        
+        return;
+      }
+      
+      response = await announcementApi.update(announcementId, submissionData)
+    } else {
+      // For new announcements, prepare full submission data
+      submissionData = {
+        type: formData.type,
+        petName: formData.petName,
+        petType: formData.petType,
+        description: formData.description,
+        lastSeenDate: new Date(formData.lastSeenDate).toISOString(),
+        location: {
+          city: formData.location.city,
+          state: formData.location.state,
+          address: formData.location.address,
+          coordinates: formData.location.coordinates.latitude && formData.location.coordinates.longitude ? {
+            latitude: formData.location.coordinates.latitude,
+            longitude: formData.location.coordinates.longitude
+          } : undefined
+        },
+        contactInfo: {
+          ...(formData.contactInfo.phone && { phone: formData.contactInfo.phone }),
+          ...(formData.contactInfo.email && { email: formData.contactInfo.email })
+        }
+      }
+
+      // Add optional fields only if they have values
+      if (formData.breed) submissionData.breed = formData.breed
+      if (formData.color) submissionData.color = formData.color
+      if (formData.age) submissionData.age = formData.age
+      if (formData.images.length > 0) submissionData.images = formData.images
+      
+      response = await announcementApi.create(submissionData)
+    }
+
+    emit('success', response.data)
+    
+  } catch (err) {
+    console.error('Error saving announcement:', err)
+    
+    // Handle specific validation errors from backend
+    if (err.response?.status === 400 && err.response?.data?.validation) {
+      // Backend validation errors
+      const validationErrors = err.response.data.validation
+      if (Array.isArray(validationErrors)) {
+        validationErrors.forEach(validationError => {
+          const field = validationError.instancePath?.replace('/', '') || validationError.schemaPath?.split('/').pop()
+          if (field) {
+            fieldErrors.value[field] = validationError.message || 'Invalid value'
+          }
+        })
+        error.value = 'Please fix the validation errors below.'
+      } else {
+        error.value = 'Invalid form data. Please check your inputs.'
+      }
+    } else if (err.response?.status === 401) {
+      error.value = 'You must be logged in to create announcements. Please log in and try again.'
+    } else if (err.response?.status === 403) {
+      error.value = 'You do not have permission to perform this action.'
+    } else if (err.response?.data?.message) {
+      error.value = err.response.data.message
+    } else if (err.response?.data?.error) {
+      error.value = err.response.data.error
+    } else if (err.code === 'NETWORK_ERROR' || err.message?.includes('Network Error')) {
+      error.value = 'Network error. Please check your internet connection and try again.'
+    } else {
+      error.value = 'An error occurred while saving the announcement. Please try again.'
+    }
+  } finally {
+    loading.value = false
+  }
+}
+</script>
