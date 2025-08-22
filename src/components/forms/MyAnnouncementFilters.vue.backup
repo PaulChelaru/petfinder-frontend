@@ -2,7 +2,96 @@
   <div class="bg-white rounded-lg shadow-md p-6 mb-8">
     <h3 class="text-lg font-semibold text-gray-900 mb-4">Filter Announcements</h3>
     
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+    <div class="gr// Watch spe// Watch for changes aconsole.log('🚀 MyAnnouncement}, { de// Watch for changes and emit updates
+watch(localFilters, (newFilters) => {
+  if (!isUpdatingFromProps) {
+    emit('update:filters', { ...newFilters })
+  }
+}, { deep: true }) Watch props.filters for external changes
+watch(() => props.filters, (newFilters) => {
+  console.log('📥 MyAnnouncementFilters: props.filters changed', newFilters)
+  isUpdatingFromProps = true
+  Object.assign(localFilters, newFilters)
+  nextTick(() => {
+    isUpdatingFromProps = false
+  })
+}, { deep: true })
+
+const updateDateFilter = () => {
+  if (localFilters.dateRange) {
+    const days = parseInt(localFilters.dateRange)
+    const date = new Date()
+    date.setDate(date.getDate() - days)
+    localFilters.postedSince = date.toISOString().split('T')[0] // Use YYYY-MM-DD format
+  } else {
+    localFilters.postedSince = null
+  }
+}
+
+const toggleLocationFilter = () => {ion loaded with simple approach like AnnouncementFilters')
+
+// Watch for changes and emit updates
+watch(localFilters, (newFilters) => {
+  if (!isUpdatingFromProps) {
+    console.log('📊 MyAnnouncementFilters: local filters changed', {
+      dateRange: newFilters.dateRange,
+      postedSince: newFilters.postedSince
+    })
+    console.log('⚡ Emitting filter change')
+    emit('update:filters', { ...newFilters })
+  } else {
+    console.log('🔄 Skipping emit - updating from props')
+  }
+}, { deep: true })
+watch(localFilters, (newFilters, oldFilters) => {
+  if (!isUpdatingFromProps) {
+    // Skip if only dateRange changed - let the specific dateRange watcher handle it
+    const onlyDateRangeChanged = oldFilters && 
+      newFilters.dateRange !== oldFilters.dateRange &&
+      Object.keys(newFilters).every(key => 
+        key === 'dateRange' || newFilters[key] === oldFilters[key]
+      )
+    
+    if (!onlyDateRangeChanged) {
+      console.log('📊 MyAnnouncementFilters: local filters changed', {
+        dateRange: newFilters.dateRange,
+        postedSince: newFilters.postedSince
+      })
+      console.log('⚡ Emitting filter change')
+      emit('update:filters', { ...newFilters })
+    } else {
+      console.log('📊 Skipping emit - dateRange change will be handled by specific watcher')
+    }
+  } else {
+    console.log('🔄 Skipping emit - updating from props')
+  }
+}, { deep: true }) dateRange changes to calculate postedSince
+watch(() => localFilters.dateRange, async (newDateRange) => {
+  if (!isUpdatingFromProps) {
+    console.log('📅 DateRange changed:', newDateRange)
+    if (newDateRange) {
+      const days = parseInt(newDateRange)
+      const date = new Date()
+      date.setDate(date.getDate() - days)
+      const newPostedSince = date.toISOString().split('T')[0]
+      console.log('📅 Calculating postedSince:', newPostedSince)
+      localFilters.postedSince = newPostedSince
+      
+      // Wait for the reactive update to complete, then emit
+      await nextTick()
+      console.log('📅 Emitting updated filters after postedSince calculation')
+      emit('update:filters', { ...localFilters })
+    } else {
+      console.log('📅 Clearing postedSince')
+      localFilters.postedSince = null
+      
+      // Wait for the reactive update to complete, then emit
+      await nextTick()
+      console.log('📅 Emitting updated filters after clearing postedSince')
+      emit('update:filters', { ...localFilters })
+    }
+  }
+}):grid-cols-3 gap-4 mb-4">
       <!-- Announcement Type -->
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-2">Type</label>
@@ -155,12 +244,39 @@ const locationStatus = ref('')
 // Flag to prevent infinite loops
 let isUpdatingFromProps = false
 
+console.log('🚀 MyAnnouncementFilters: New version loaded with separate dateRange watcher')
+
 // Watch for changes and emit updates
 watch(localFilters, (newFilters) => {
   if (!isUpdatingFromProps) {
+    console.log('📊 MyAnnouncementFilters: local filters changed', {
+      dateRange: newFilters.dateRange,
+      postedSince: newFilters.postedSince
+    })
+    console.log('⚡ Emitting filter change')
     emit('update:filters', { ...newFilters })
+  } else {
+    console.log('� Skipping emit - updating from props')
   }
 }, { deep: true })
+
+// Watch specifically for dateRange changes to calculate postedSince
+watch(() => localFilters.dateRange, (newDateRange) => {
+  if (!isUpdatingFromProps) {
+    console.log('📅 DateRange changed:', newDateRange)
+    if (newDateRange) {
+      const days = parseInt(newDateRange)
+      const date = new Date()
+      date.setDate(date.getDate() - days)
+      const newPostedSince = date.toISOString().split('T')[0]
+      console.log('📅 Calculating postedSince:', newPostedSince)
+      localFilters.postedSince = newPostedSince
+    } else {
+      console.log('� Clearing postedSince')
+      localFilters.postedSince = null
+    }
+  }
+})
 
 // Watch props.filters for external changes
 watch(() => props.filters, (newFilters) => {
@@ -170,17 +286,6 @@ watch(() => props.filters, (newFilters) => {
     isUpdatingFromProps = false
   })
 }, { deep: true })
-
-const updateDateFilter = () => {
-  if (localFilters.dateRange) {
-    const days = parseInt(localFilters.dateRange)
-    const date = new Date()
-    date.setDate(date.getDate() - days)
-    localFilters.postedSince = date.toISOString().split('T')[0] // Use YYYY-MM-DD format
-  } else {
-    localFilters.postedSince = null
-  }
-}
 
 const toggleLocationFilter = () => {
   showLocationFilter.value = !showLocationFilter.value
