@@ -1,7 +1,7 @@
 <template>
   <button
     :class="[
-      'px-4 py-2 rounded-lg font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2',
+      'px-4 py-2 rounded-lg font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 whitespace-nowrap',
       variantClasses,
       sizeClasses,
       {
@@ -12,10 +12,10 @@
     :disabled="disabled || loading"
     @click="$emit('click', $event)"
   >
-    <div class="flex items-center justify-center gap-2">
+    <div class="flex items-center justify-center gap-2 whitespace-nowrap">
       <LoadingSpinner v-if="loading" :size="iconSize" />
       <component v-else-if="icon" :is="icon" :class="iconClasses" />
-      <span v-if="$slots.default"><slot /></span>
+      <span v-if="$slots.default" class="whitespace-nowrap"><slot /></span>
     </div>
   </button>
 </template>

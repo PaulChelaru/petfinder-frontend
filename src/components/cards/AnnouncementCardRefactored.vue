@@ -6,24 +6,16 @@
         <div class="flex items-center">
           <div :class="iconBadgeClass" class="mr-3">
             <!-- Checkmark icon for resolved announcements -->
-            <svg v-if="announcement.status === 'resolved'" class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-            </svg>
+            <i v-if="announcement.status === 'resolved'" class="fas fa-check-circle w-5 h-5 text-white"></i>
             
             <!-- Search/magnifying glass icon for lost pets -->
-            <svg v-else-if="announcement.type === 'lost'" class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-            </svg>
+            <i v-else-if="announcement.type === 'lost'" class="fas fa-search w-5 h-5 text-white"></i>
             
             <!-- Heart/home icon for found pets -->
-            <svg v-else-if="announcement.type === 'found'" class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-            </svg>
+            <i v-else-if="announcement.type === 'found'" class="fas fa-heart w-5 h-5 text-white"></i>
             
             <!-- Default icon -->
-            <svg v-else class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M10 12a2 2 0 100-4 2 2 0 000 4z M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z"/>
-            </svg>
+            <i v-else class="fas fa-eye w-5 h-5 text-white"></i>
           </div>
           
           <span :class="typeTextClass" class="font-bold text-sm uppercase">
@@ -52,9 +44,7 @@
         @error="imageError = true"
       >
       <div v-else class="flex items-center justify-center h-full text-gray-400 relative z-10">
-        <svg class="w-12 h-12" fill="currentColor" viewBox="0 0 20 20">
-          <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd" />
-        </svg>
+        <i class="fas fa-image w-12 h-12 text-4xl"></i>
       </div>
     </div>
 
@@ -121,7 +111,7 @@
       </ActionButton>
       
       <ActionButton 
-        v-if="announcement.isOwner"
+        v-if="announcement.isOwner && announcement.status !== 'resolved'"
         @click="$emit('edit', announcement)"
         variant="secondary"
         size="sm"

@@ -1,19 +1,19 @@
 <template>
-  <div :class="[
-    'card transition-all duration-300 ease-in-out',
-    variantClass,
-    {
-      'card-hover transform hover:scale-105 hover:shadow-xl cursor-pointer': hoverable,
-      'backdrop-blur-sm bg-white/95': variant === 'glass'
-    }
-  ]">
-    <div v-if="$slots.header" class="card-header border-b border-gray-100 bg-gray-50/50">
-      <slot name="header" />
+  <div :class="cardClasses">
+    <!-- Header -->
+    <div v-if="$slots.header || title" class="card-header" :class="headerClasses">
+      <slot name="header">
+        <h3 v-if="title" class="card-title">{{ title }}</h3>
+      </slot>
     </div>
-    <div class="card-body">
+
+    <!-- Content -->
+    <div class="card-content" :class="contentClasses">
       <slot />
     </div>
-    <div v-if="$slots.footer" class="card-footer border-t border-gray-100 bg-gray-50/50">
+
+    <!-- Footer -->
+    <div v-if="$slots.footer" class="card-footer" :class="footerClasses">
       <slot name="footer" />
     </div>
   </div>
@@ -23,24 +23,90 @@
 import { computed } from 'vue'
 
 const props = defineProps({
+  title: {
+    type: String,
+    default: ''
+  },
   variant: {
     type: String,
     default: 'default',
-    validator: (value) => ['default', 'bordered', 'elevated', 'glass'].includes(value)
+    validator: (value) => ['default', 'elevated', 'outlined', 'glass'].includes(value)
   },
-  hoverable: {
-    type: Boolean,
-    default: false
+  padding: {
+    type: String,
+    default: 'md',
+    validator: (value) => ['none', 'sm', 'md', 'lg'].includes(value)
+  },
+  rounded: {
+    type: String,
+    default: 'md',
+    validator: (value) => ['none', 'sm', 'md', 'lg', 'full'].includes(value)
   }
 })
 
-const variantClass = computed(() => {
+const cardClasses = computed(() => {
+  const base = 'bg-white overflow-hidden transition-all duration-200'
+  
   const variants = {
-    default: 'card-default',
-    bordered: 'card-bordered',
-    elevated: 'card-elevated shadow-lg',
-    glass: 'card-glass shadow-xl border border-white/20'
+    default: 'border border-gray-200',
+    elevated: 'shadow-lg hover:shadow-xl',
+    outlined: 'border-2 border-gray-300',
+    glass: 'bg-white/80 backdrop-blur-sm border border-white/20 shadow-xl'
   }
-  return variants[props.variant]
+  
+  const roundedClasses = {
+    none: 'rounded-none',
+    sm: 'rounded-sm',
+    md: 'rounded-lg',
+    lg: 'rounded-xl',
+    full: 'rounded-2xl'
+  }
+  
+  return `${base} ${variants[props.variant]} ${roundedClasses[props.rounded]}`
+})
+
+const headerClasses = computed(() => {
+  const paddingClasses = {
+    none: '',
+    sm: 'px-4 py-3',
+    md: 'px-6 py-4',
+    lg: 'px-8 py-6'
+  }
+  
+  return `border-b border-gray-200 ${paddingClasses[props.padding]}`
+})
+
+const contentClasses = computed(() => {
+  const paddingClasses = {
+    none: '',
+    sm: 'p-4',
+    md: 'p-6',
+    lg: 'p-8'
+  }
+  
+  return paddingClasses[props.padding]
+})
+
+const footerClasses = computed(() => {
+  const paddingClasses = {
+    none: '',
+    sm: 'px-4 py-3',
+    md: 'px-6 py-4',
+    lg: 'px-8 py-6'
+  }
+  
+  return `border-t border-gray-200 bg-gray-50 ${paddingClasses[props.padding]}`
 })
 </script>
+
+<style scoped>
+.card-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.card-header {
+  background-color: white;
+}
+</style>

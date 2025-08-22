@@ -1,6 +1,8 @@
 <template>
   <div class="bg-white rounded-lg shadow-md p-6 mb-8">
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4 mb-4">
+    <h3 class="text-lg font-semibold text-gray-900 mb-4">Filter Announcements</h3>
+    
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
       <!-- Announcement Type -->
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-2">Type</label>
@@ -24,11 +26,12 @@
           <option value="">All Pets</option>
           <option value="dog">Dog</option>
           <option value="cat">Cat</option>
+          <option value="bird">Bird</option>
+          <option value="rabbit">Rabbit</option>
+          <option value="other">Other</option>
         </select>
       </div>
-    </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
       <!-- Date Range -->
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-2">Posted Since</label>
@@ -41,9 +44,12 @@
           <option value="1">Last 24 hours</option>
           <option value="7">Last week</option>
           <option value="30">Last month</option>
+          <option value="90">Last 3 months</option>
         </select>
       </div>
+    </div>
 
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
       <!-- Location -->
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-2">Location</label>
@@ -53,12 +59,8 @@
           size="sm"
           class="w-full"
         >
-          <svg v-if="showLocationFilter" class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-          </svg>
-          <svg v-else class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-            <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" />
-          </svg>
+          <i v-if="showLocationFilter" class="fas fa-times w-4 h-4 mr-2"></i>
+          <i v-else class="fas fa-map-marker-alt w-4 h-4 mr-2"></i>
           {{ showLocationFilter ? 'Clear Location' : 'Near Me' }}
         </BaseButton>
       </div>
@@ -71,10 +73,8 @@
           variant="outline"
           class="w-full"
         >
-          <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-          </svg>
-          Reset
+          <i class="fas fa-redo w-4 h-4 mr-2"></i>
+          Reset Filters
         </BaseButton>
       </div>
     </div>
@@ -105,9 +105,7 @@
             size="sm"
             class="mr-2"
           >
-            <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-              <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" />
-            </svg>
+            <i class="fas fa-crosshairs w-4 h-4 mr-2"></i>
             Use My Location
           </BaseButton>
           
@@ -117,11 +115,25 @@
         </div>
       </div>
     </div>
+
+    <!-- Search Bar -->
+    <div class="border-t pt-4 mt-4">
+      <label class="block text-sm font-medium text-gray-700 mb-2">Search</label>
+      <div class="relative">
+        <input
+          v-model="localFilters.search"
+          type="text"
+          placeholder="Search by pet name, breed, description..."
+          class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+        >
+        <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, watch } from 'vue'
+import { ref, reactive, watch, nextTick, onBeforeUnmount } from 'vue'
 import BaseButton from '../buttons/BaseButton.vue'
 
 const props = defineProps({
@@ -145,14 +157,41 @@ const showLocationFilter = ref(false)
 const gettingLocation = ref(false)
 const locationStatus = ref('')
 
-// Watch for changes and emit updates
-watch(localFilters, (newFilters) => {
-  emit('update:filters', { ...newFilters })
+// Flag to prevent infinite loops
+let isUpdatingFromProps = false
+let searchTimeout = null
+
+// Watch for changes and emit updates (with debounce for search)
+watch(localFilters, (newFilters, oldFilters) => {
+  if (!isUpdatingFromProps) {
+    // Check if only search changed for debouncing
+    if (newFilters.search !== oldFilters.search && 
+        Object.keys(newFilters).every(key => 
+          key === 'search' || newFilters[key] === oldFilters[key]
+        )) {
+      
+      // Debounce search input
+      if (searchTimeout) {
+        clearTimeout(searchTimeout)
+      }
+      
+      searchTimeout = setTimeout(() => {
+        emit('update:filters', { ...newFilters })
+      }, 300) // Wait 300ms after user stops typing
+    } else {
+      // Emit immediately for non-search filter changes
+      emit('update:filters', { ...newFilters })
+    }
+  }
 }, { deep: true })
 
 // Watch props.filters for external changes
 watch(() => props.filters, (newFilters) => {
+  isUpdatingFromProps = true
   Object.assign(localFilters, newFilters)
+  nextTick(() => {
+    isUpdatingFromProps = false
+  })
 }, { deep: true })
 
 const toggleLocationFilter = () => {
@@ -213,9 +252,6 @@ const getCurrentLocation = () => {
             // Add state/region if available
             if (address.state) parts.push(address.state)
             
-            // Add country
-            if (address.country) parts.push(address.country)
-            
             if (parts.length >= 2) {
               locationStatus.value = `📍 ${parts.slice(0, 3).join(', ')}`
             } else if (parts.length === 1) {
@@ -239,7 +275,6 @@ const getCurrentLocation = () => {
       
       gettingLocation.value = false
       
-      // Don't auto-search anymore - let user click Search button
     },
     (error) => {
       console.error('Error getting location:', error)
@@ -266,15 +301,16 @@ const updateDateFilter = () => {
 }
 
 const resetFilters = () => {
-  // Reset all filters
+  // Reset all filters (no status filter for public announcements)
   Object.assign(localFilters, {
-    petType: '',
     type: '',
+    petType: '',
     longitude: null,
     latitude: null,
     maxDistance: null,
     postedSince: null,
-    dateRange: ''
+    dateRange: '',
+    search: ''
   })
   
   // Hide location filter
@@ -284,4 +320,11 @@ const resetFilters = () => {
   // Emit reset event
   emit('reset')
 }
+
+// Cleanup
+onBeforeUnmount(() => {
+  if (searchTimeout) {
+    clearTimeout(searchTimeout)
+  }
+})
 </script>

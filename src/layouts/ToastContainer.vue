@@ -28,30 +28,22 @@
             <div class="flex-shrink-0 toast-icon">
               <!-- Success Icon -->
               <div v-if="toast.type === 'success'" class="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center">
-                <svg class="w-4 h-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                </svg>
+                <i class="fas fa-check w-4 h-4 text-green-600"></i>
               </div>
               
               <!-- Error Icon -->
               <div v-else-if="toast.type === 'error'" class="w-6 h-6 rounded-full bg-red-100 flex items-center justify-center">
-                <svg class="w-4 h-4 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
+                <i class="fas fa-times w-4 h-4 text-red-600"></i>
               </div>
               
               <!-- Warning Icon -->
               <div v-else-if="toast.type === 'warning'" class="w-6 h-6 rounded-full bg-yellow-100 flex items-center justify-center">
-                <svg class="w-4 h-4 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                </svg>
+                <i class="fas fa-exclamation-triangle w-4 h-4 text-yellow-600"></i>
               </div>
               
               <!-- Info Icon -->
               <div v-else class="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center">
-                <svg class="w-4 h-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
+                <i class="fas fa-info-circle w-4 h-4 text-blue-600"></i>
               </div>
             </div>
             
@@ -94,9 +86,7 @@
                 :class="closeButtonClass(toast.type)"
                 :aria-label="'Close notification'"
               >
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
+                <i class="fas fa-times w-4 h-4"></i>
               </button>
             </div>
           </div>

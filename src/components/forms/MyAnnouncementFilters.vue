@@ -2,7 +2,96 @@
   <div class="bg-white rounded-lg shadow-md p-6 mb-8">
     <h3 class="text-lg font-semibold text-gray-900 mb-4">Filter Announcements</h3>
     
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+    <div class="gr// Watch spe// Watch for changes aconsole.log('🚀 MyAnnouncement}, { de// Watch for changes and emit updates
+watch(localFilters, (newFilters) => {
+  if (!isUpdatingFromProps) {
+    emit('update:filters', { ...newFilters })
+  }
+}, { deep: true }) Watch props.filters for external changes
+watch(() => props.filters, (newFilters) => {
+  console.log('📥 MyAnnouncementFilters: props.filters changed', newFilters)
+  isUpdatingFromProps = true
+  Object.assign(localFilters, newFilters)
+  nextTick(() => {
+    isUpdatingFromProps = false
+  })
+}, { deep: true })
+
+const updateDateFilter = () => {
+  if (localFilters.dateRange) {
+    const days = parseInt(localFilters.dateRange)
+    const date = new Date()
+    date.setDate(date.getDate() - days)
+    localFilters.postedSince = date.toISOString().split('T')[0] // Use YYYY-MM-DD format
+  } else {
+    localFilters.postedSince = null
+  }
+}
+
+const toggleLocationFilter = () => {ion loaded with simple approach like AnnouncementFilters')
+
+// Watch for changes and emit updates
+watch(localFilters, (newFilters) => {
+  if (!isUpdatingFromProps) {
+    console.log('📊 MyAnnouncementFilters: local filters changed', {
+      dateRange: newFilters.dateRange,
+      postedSince: newFilters.postedSince
+    })
+    console.log('⚡ Emitting filter change')
+    emit('update:filters', { ...newFilters })
+  } else {
+    console.log('🔄 Skipping emit - updating from props')
+  }
+}, { deep: true })
+watch(localFilters, (newFilters, oldFilters) => {
+  if (!isUpdatingFromProps) {
+    // Skip if only dateRange changed - let the specific dateRange watcher handle it
+    const onlyDateRangeChanged = oldFilters && 
+      newFilters.dateRange !== oldFilters.dateRange &&
+      Object.keys(newFilters).every(key => 
+        key === 'dateRange' || newFilters[key] === oldFilters[key]
+      )
+    
+    if (!onlyDateRangeChanged) {
+      console.log('📊 MyAnnouncementFilters: local filters changed', {
+        dateRange: newFilters.dateRange,
+        postedSince: newFilters.postedSince
+      })
+      console.log('⚡ Emitting filter change')
+      emit('update:filters', { ...newFilters })
+    } else {
+      console.log('📊 Skipping emit - dateRange change will be handled by specific watcher')
+    }
+  } else {
+    console.log('🔄 Skipping emit - updating from props')
+  }
+}, { deep: true }) dateRange changes to calculate postedSince
+watch(() => localFilters.dateRange, async (newDateRange) => {
+  if (!isUpdatingFromProps) {
+    console.log('📅 DateRange changed:', newDateRange)
+    if (newDateRange) {
+      const days = parseInt(newDateRange)
+      const date = new Date()
+      date.setDate(date.getDate() - days)
+      const newPostedSince = date.toISOString().split('T')[0]
+      console.log('📅 Calculating postedSince:', newPostedSince)
+      localFilters.postedSince = newPostedSince
+      
+      // Wait for the reactive update to complete, then emit
+      await nextTick()
+      console.log('📅 Emitting updated filters after postedSince calculation')
+      emit('update:filters', { ...localFilters })
+    } else {
+      console.log('📅 Clearing postedSince')
+      localFilters.postedSince = null
+      
+      // Wait for the reactive update to complete, then emit
+      await nextTick()
+      console.log('📅 Emitting updated filters after clearing postedSince')
+      emit('update:filters', { ...localFilters })
+    }
+  }
+}):grid-cols-3 gap-4 mb-4">
       <!-- Announcement Type -->
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-2">Type</label>
@@ -68,12 +157,8 @@
           size="sm"
           class="w-full"
         >
-          <svg v-if="showLocationFilter" class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-          </svg>
-          <svg v-else class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-            <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" />
-          </svg>
+          <i v-if="showLocationFilter" class="fas fa-times w-4 h-4 mr-2"></i>
+          <i v-else class="fas fa-map-marker-alt w-4 h-4 mr-2"></i>
           {{ showLocationFilter ? 'Clear Location' : 'Near Me' }}
         </BaseButton>
       </div>
@@ -86,9 +171,7 @@
           variant="outline"
           class="w-full"
         >
-          <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-          </svg>
+          <i class="fas fa-redo w-4 h-4 mr-2"></i>
           Reset Filters
         </BaseButton>
       </div>
@@ -120,9 +203,7 @@
             size="sm"
             class="mr-2"
           >
-            <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-              <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" />
-            </svg>
+            <i class="fas fa-crosshairs w-4 h-4 mr-2"></i>
             Use My Location
           </BaseButton>
           
@@ -136,7 +217,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, watch } from 'vue'
+import { ref, reactive, watch, nextTick } from 'vue'
 import BaseButton from '../buttons/BaseButton.vue'
 
 const props = defineProps({
@@ -160,14 +241,50 @@ const showLocationFilter = ref(false)
 const gettingLocation = ref(false)
 const locationStatus = ref('')
 
+// Flag to prevent infinite loops
+let isUpdatingFromProps = false
+
+console.log('🚀 MyAnnouncementFilters: New version loaded with separate dateRange watcher')
+
 // Watch for changes and emit updates
 watch(localFilters, (newFilters) => {
-  emit('update:filters', { ...newFilters })
+  if (!isUpdatingFromProps) {
+    console.log('📊 MyAnnouncementFilters: local filters changed', {
+      dateRange: newFilters.dateRange,
+      postedSince: newFilters.postedSince
+    })
+    console.log('⚡ Emitting filter change')
+    emit('update:filters', { ...newFilters })
+  } else {
+    console.log('� Skipping emit - updating from props')
+  }
 }, { deep: true })
+
+// Watch specifically for dateRange changes to calculate postedSince
+watch(() => localFilters.dateRange, (newDateRange) => {
+  if (!isUpdatingFromProps) {
+    console.log('📅 DateRange changed:', newDateRange)
+    if (newDateRange) {
+      const days = parseInt(newDateRange)
+      const date = new Date()
+      date.setDate(date.getDate() - days)
+      const newPostedSince = date.toISOString().split('T')[0]
+      console.log('📅 Calculating postedSince:', newPostedSince)
+      localFilters.postedSince = newPostedSince
+    } else {
+      console.log('� Clearing postedSince')
+      localFilters.postedSince = null
+    }
+  }
+})
 
 // Watch props.filters for external changes
 watch(() => props.filters, (newFilters) => {
+  isUpdatingFromProps = true
   Object.assign(localFilters, newFilters)
+  nextTick(() => {
+    isUpdatingFromProps = false
+  })
 }, { deep: true })
 
 const toggleLocationFilter = () => {
@@ -263,17 +380,6 @@ const getCurrentLocation = () => {
       maximumAge: 0
     }
   )
-}
-
-const updateDateFilter = () => {
-  if (localFilters.dateRange) {
-    const days = parseInt(localFilters.dateRange)
-    const date = new Date()
-    date.setDate(date.getDate() - days)
-    localFilters.postedSince = date.toISOString().split('T')[0] // Use YYYY-MM-DD format
-  } else {
-    localFilters.postedSince = null
-  }
 }
 
 const resetFilters = () => {

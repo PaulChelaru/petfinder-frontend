@@ -14,9 +14,7 @@
     <!-- Empty State -->
     <div v-else class="text-center py-12">
       <div class="mb-4">
-        <svg class="mx-auto h-16 w-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6-4h6m2 5.291A7.962 7.962 0 0112 15c-2.34 0-4.5-.816-6.233-2.179L5 12.821A7.962 7.962 0 0112 15z" />
-        </svg>
+        <i class="fas fa-bullhorn mx-auto h-16 w-16 text-gray-400 text-6xl"></i>
       </div>
       <h3 class="text-lg font-medium text-gray-900 mb-2">{{ emptyTitle }}</h3>
       <p class="text-gray-500">{{ emptyDescription }}</p>

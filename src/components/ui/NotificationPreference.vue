@@ -2,11 +2,7 @@
   <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200 notification-card">
     <div class="flex items-center space-x-3">
       <div class="w-10 h-10 rounded-full flex items-center justify-center" :class="iconClass">
-        <svg class="w-5 h-5" :class="iconColorClass" fill="currentColor" viewBox="0 0 24 24">
-          <path v-if="icon === 'email'" d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
-          <path v-else-if="icon === 'sms'" d="M20 15.5c-1.25 0-2.45-.2-3.57-.57-.35-.11-.74-.03-1.02.24l-2.2 2.2c-2.83-1.44-5.15-3.75-6.59-6.59l2.2-2.2c.27-.27.35-.67.24-1.02C8.7 6.45 8.5 5.25 8.5 4c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1 0 9.39 7.61 17 17 17 .55 0 1-.45 1-1v-3.5c0-.55-.45-1-1-1z"/>
-          <path v-else d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-        </svg>
+        <i class="text-lg" :class="[iconFaClass, iconColorClass]"></i>
       </div>
       <div>
         <p class="text-sm font-medium text-gray-900">{{ title }}</p>
@@ -73,6 +69,17 @@ const iconClass = computed(() => {
       return 'bg-green-100'
     default:
       return 'bg-gray-100'
+  }
+})
+
+const iconFaClass = computed(() => {
+  switch (props.icon) {
+    case 'email':
+      return 'fas fa-envelope'
+    case 'sms':
+      return 'fas fa-sms'
+    default:
+      return 'fas fa-bell'
   }
 })
 

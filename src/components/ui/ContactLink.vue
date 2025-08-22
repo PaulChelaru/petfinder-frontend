@@ -1,9 +1,17 @@
 <template>
-  <div class="flex items-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors duration-200">
-    <component :is="icon" class="w-5 h-5 text-gray-500 mr-3" />
-    <a :href="href" class="text-blue-600 hover:text-blue-800 font-semibold flex-1">
-      {{ value }}
-    </a>
+  <div class="flex items-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+    <i :class="iconClass" class="mr-3 text-lg"></i>
+    <div class="flex-1">
+      <div class="text-sm font-medium text-gray-900">{{ label }}</div>
+      <a 
+        :href="href" 
+        class="text-sm text-blue-600 hover:text-blue-800 transition-colors"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        {{ value }}
+      </a>
+    </div>
   </div>
 </template>
 
@@ -19,11 +27,15 @@ const props = defineProps({
   value: {
     type: String,
     required: true
-  },
-  icon: {
-    type: [String, Object],
-    required: true
   }
+})
+
+const iconClass = computed(() => {
+  return props.type === 'phone' ? 'fas fa-phone text-green-600' : 'fas fa-envelope text-blue-600'
+})
+
+const label = computed(() => {
+  return props.type === 'phone' ? 'Phone' : 'Email'
 })
 
 const href = computed(() => {

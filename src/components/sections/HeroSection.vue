@@ -15,9 +15,7 @@
           <!-- Icon -->
           <div class="mb-8 flex justify-center">
             <div class="w-24 h-24 bg-gradient-to-br from-primary-500 to-primary-600 rounded-3xl flex items-center justify-center shadow-2xl border border-primary-200">
-              <svg class="w-12 h-12 text-white" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 2C10.896 2 10 2.896 10 4s.896 2 2 2 2-.896 2-2-.896-2-2-2zM8.5 7C7.672 7 7 7.672 7 8.5S7.672 10 8.5 10 10 9.328 10 8.5 9.328 7 8.5 7zm7 0c-.828 0-1.5.672-1.5 1.5S14.672 10 15.5 10 17 9.328 17 8.5 16.328 7 15.5 7zM12 9c-2.5 0-4.5 1.5-4.5 4 0 1.5 1 3 2.5 4 .8.5 1.7.8 2.5.8s1.7-.3 2.5-.8c1.5-1 2.5-2.5 2.5-4 0-2.5-2-4-4.5-4zm-6 4.5C5.5 12.672 4.828 12 4 12s-1.5.672-1.5 1.5.672 1.5 1.5 1.5.828-.672 1.5-1.5-.672-1.5-1.5-1.5zm12 0c-.828 0-1.5.672-1.5 1.5s.672 1.5 1.5 1.5 1.5-.672 1.5-1.5-.672-1.5-1.5-1.5z"/>
-              </svg>
+              <i class="fas fa-paw w-12 h-12 text-white text-5xl"></i>
             </div>
           </div>
           
@@ -59,21 +57,15 @@
           <!-- Trust Indicators -->
           <div class="mt-16 flex flex-col sm:flex-row items-center justify-center gap-8 text-gray-600">
             <div class="flex items-center gap-2">
-              <svg class="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-              </svg>
+              <i class="fas fa-check-circle w-5 h-5 text-green-500"></i>
               <span class="text-sm font-medium">{{ stat1 }}</span>
             </div>
             <div class="flex items-center gap-2">
-              <svg class="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-              </svg>
+              <i class="fas fa-check-circle w-5 h-5 text-green-500"></i>
               <span class="text-sm font-medium">{{ stat2 }}</span>
             </div>
             <div class="flex items-center gap-2">
-              <svg class="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-              </svg>
+              <i class="fas fa-check-circle w-5 h-5 text-green-500"></i>
               <span class="text-sm font-medium">{{ stat3 }}</span>
             </div>
           </div>

@@ -1,4 +1,5 @@
 // UI Components
+export { default as BaseInput } from './BaseInput.vue'
 export { default as ContactLink } from './ContactLink.vue'
 export { default as FeatureCard } from './FeatureCard.vue'
 export { default as ImageGallery } from './ImageGallery.vue'

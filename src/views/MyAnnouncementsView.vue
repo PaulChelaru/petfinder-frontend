@@ -39,9 +39,7 @@
           <div class="bg-white rounded-lg shadow p-6 stats-card">
             <div class="flex items-center">
               <div class="p-2 bg-blue-100 rounded-lg">
-                <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
+                <i class="fas fa-file-alt w-6 h-6 text-blue-600"></i>
               </div>
               <div class="ml-4">
                 <p class="text-sm font-medium text-gray-500">Total</p>
@@ -53,9 +51,7 @@
           <div class="bg-white rounded-lg shadow p-6 stats-card">
             <div class="flex items-center">
               <div class="p-2 bg-green-100 rounded-lg">
-                <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
+                <i class="fas fa-check-circle w-6 h-6 text-green-600"></i>
               </div>
               <div class="ml-4">
                 <p class="text-sm font-medium text-gray-500">Active</p>
@@ -67,9 +63,7 @@
           <div class="bg-white rounded-lg shadow p-6 stats-card">
             <div class="flex items-center">
               <div class="p-2 bg-purple-100 rounded-lg">
-                <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                </svg>
+                <i class="fas fa-check w-6 h-6 text-purple-600"></i>
               </div>
               <div class="ml-4">
                 <p class="text-sm font-medium text-gray-500">Resolved</p>
@@ -100,9 +94,7 @@
 
         <!-- Empty State -->
         <div v-else class="text-center py-12">
-          <svg class="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-          </svg>
+          <i class="fas fa-file-alt w-16 h-16 text-gray-400 mx-auto mb-4 text-6xl"></i>
           <h3 class="text-lg font-semibold text-gray-900 mb-2">No announcements found</h3>
           <p class="text-gray-600 mb-4">You haven't created any announcements yet, or no announcements match your current filters.</p>
         </div>
@@ -206,11 +198,18 @@ const stats = computed(() => {
 
 // Methods
 const updateFilters = (newFilters) => {
-  Object.assign(filters, newFilters)
+  // Check if filters actually changed
+  const hasChanged = Object.keys(newFilters).some(key => {
+    return filters[key] !== newFilters[key]
+  })
   
-  // Auto-reload when filters change
-  pagination.page = 1
-  loadAnnouncements()
+  if (hasChanged) {
+    Object.assign(filters, newFilters)
+    
+    // Auto-reload when filters change
+    pagination.page = 1
+    loadAnnouncements()
+  }
 }
 
 const loadAnnouncements = async () => {
@@ -301,6 +300,11 @@ const handleViewAnnouncement = (announcement) => {
 }
 
 const handleEditAnnouncement = (announcement) => {
+  // Don't allow editing resolved announcements
+  if (announcement.status === 'resolved') {
+    return
+  }
+  
   if (viewingAnnouncement.value) {
     viewingAnnouncement.value = null
   }

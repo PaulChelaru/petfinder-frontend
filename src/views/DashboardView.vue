@@ -58,7 +58,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useToastStore } from '@/stores/toast'
 import { userAPI } from '@/api/user'
 import NavBar from '@/layouts/NavBar.vue'
-import WelcomeSection from '@/components/ui/WelcomeSection.vue'
+import WelcomeSection from '@/components/sections/WelcomeSection.vue'
 import ProfileCard from '@/components/cards/ProfileCard.vue'
 import QuickActionCard from '@/components/cards/QuickActionCard.vue'
 

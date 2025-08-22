@@ -1,20 +1,17 @@
 <template>
   <button
     :class="[
-      'btn',
-      'flex items-center justify-center',
-      variantClass,
-      sizeClass,
+      'px-4 py-2 rounded-lg font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2',
+      variantClasses,
+      sizeClasses,
       {
         'opacity-50 cursor-not-allowed': disabled,
-        'w-full': fullWidth
+        'hover:scale-105 active:scale-95': !disabled
       }
     ]"
     :disabled="disabled"
-    :type="type"
     @click="$emit('click', $event)"
   >
-    <span v-if="loading" class="animate-spin mr-2">⟳</span>
     <slot />
   </button>
 </template>
@@ -26,7 +23,7 @@ const props = defineProps({
   variant: {
     type: String,
     default: 'primary',
-    validator: (value) => ['primary', 'secondary', 'danger', 'success', 'warning', 'outline', 'outline-white'].includes(value)
+    validator: (value) => ['primary', 'secondary', 'outline', 'danger'].includes(value)
   },
   size: {
     type: String,
@@ -36,71 +33,28 @@ const props = defineProps({
   disabled: {
     type: Boolean,
     default: false
-  },
-  loading: {
-    type: Boolean,
-    default: false
-  },
-  fullWidth: {
-    type: Boolean,
-    default: false
-  },
-  type: {
-    type: String,
-    default: 'button'
   }
 })
 
 defineEmits(['click'])
 
-const variantClass = computed(() => {
+const variantClasses = computed(() => {
   const variants = {
-    primary: 'btn-primary',
-    secondary: 'btn-secondary', 
-    danger: 'btn-danger',
-    success: 'btn-success',
-    warning: 'btn-warning',
-    outline: 'btn-outline',
-    'outline-white': 'btn-outline-white'
+    primary: 'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500',
+    secondary: 'bg-gray-600 text-white hover:bg-gray-700 focus:ring-gray-500',
+    outline: 'border-2 border-gray-300 text-gray-700 hover:bg-gray-50 focus:ring-gray-500',
+    danger: 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500'
   }
   return variants[props.variant]
 })
 
-const sizeClass = computed(() => {
+const sizeClasses = computed(() => {
   const sizes = {
-    sm: 'btn-sm',
-    md: 'btn-md', 
-    lg: 'btn-lg',
-    xl: 'btn-xl'
+    sm: 'px-3 py-1.5 text-sm',
+    md: 'px-4 py-2 text-base',
+    lg: 'px-6 py-3 text-lg',
+    xl: 'px-8 py-4 text-xl'
   }
   return sizes[props.size]
 })
 </script>
-
-<style scoped>
-.btn-sm {
-  padding: 0.375rem 0.75rem;
-  font-size: 0.875rem;
-  line-height: 1.25rem;
-}
-
-.btn-md {
-  padding: 0.5rem 1rem;
-  font-size: 1rem;
-  line-height: 1.5rem;
-}
-
-.btn-lg {
-  padding: 0.75rem 1.5rem;
-  font-size: 1.125rem;
-  line-height: 1.75rem;
-}
-
-.btn-xl {
-  padding: 1rem 2rem;
-  font-size: 1.125rem;
-  line-height: 1.75rem;
-  font-weight: 600;
-  border-radius: 0.75rem;
-}
-</style>

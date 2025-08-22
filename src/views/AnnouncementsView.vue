@@ -56,9 +56,7 @@
 
         <!-- Empty State -->
         <div v-else class="text-center py-12">
-          <svg class="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
+          <i class="fas fa-search w-16 h-16 text-gray-400 mx-auto mb-4 text-6xl"></i>
           <h3 class="text-lg font-semibold text-gray-900 mb-2">No announcements found</h3>
           <p class="text-gray-600 mb-4">Try adjusting your search criteria or filters</p>
           <ActionButton @click="handleResetFilters" variant="outline" icon="refresh">
@@ -147,6 +145,7 @@ const resolvingAnnouncement = ref(null)
 const loadAnnouncements = async () => {
   try {
     loading.value = true
+    console.log('🔍 Loading announcements with filters:', filters)
     
     const params = {
       page: pagination.page,
@@ -181,11 +180,18 @@ const loadAnnouncements = async () => {
 }
 
 const updateFilters = (newFilters) => {
-  Object.assign(filters, newFilters)
+  // Check if filters actually changed
+  const hasChanged = Object.keys(newFilters).some(key => {
+    return filters[key] !== newFilters[key]
+  })
   
-  // Auto-search when filters change
-  pagination.page = 1
-  loadAnnouncements()
+  if (hasChanged) {
+    Object.assign(filters, newFilters)
+    
+    // Auto-search when filters change
+    pagination.page = 1
+    loadAnnouncements()
+  }
 }
 
 const handleResetFilters = () => {
@@ -207,6 +213,11 @@ const handleViewAnnouncement = (announcement) => {
 }
 
 const handleEditAnnouncement = (announcement) => {
+  // Don't allow editing resolved announcements
+  if (announcement.status === 'resolved') {
+    return
+  }
+  
   if (viewingAnnouncement.value) {
     viewingAnnouncement.value = null
   }
@@ -292,20 +303,4 @@ const handleAnnouncementResolved = () => {
 onMounted(() => {
   loadAnnouncements()
 })
-
-// Watch for changes in filters (with debounce for search)
-let searchTimeout = null
-watch(() => filters.search, (newSearch) => {
-  if (searchTimeout) {
-    clearTimeout(searchTimeout)
-  }
-  
-  // Debounce search input
-  searchTimeout = setTimeout(() => {
-    if (newSearch !== undefined) {
-      pagination.page = 1
-      loadAnnouncements()
-    }
-  }, 500) // Wait 500ms after user stops typing
-}, { flush: 'post' })
 </script>

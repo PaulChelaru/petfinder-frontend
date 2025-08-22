@@ -1,4 +1,5 @@
 // Icons
+export { default as CheckCircleIcon } from './CheckCircleIcon.vue'
 export { default as ClockIcon } from './ClockIcon.vue'
 export { default as DocumentIcon } from './DocumentIcon.vue'
 export { default as EmailIcon } from './EmailIcon.vue'

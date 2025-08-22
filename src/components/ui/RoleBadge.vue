@@ -1,12 +1,7 @@
 <template>
-  <span class="inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold shadow-sm border role-badge"
-        :class="roleClass">
-    <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 24 24">
-      <path v-if="role === 'admin'" d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/>
-      <path v-else-if="role === 'volunteer'" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-      <path v-else d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/>
-    </svg>
-    {{ roleDisplayName }}
+  <span :class="badgeClasses">
+    <i v-if="icon" :class="icon + ' mr-1'"></i>
+    <slot>{{ displayText }}</slot>
   </span>
 </template>
 
@@ -16,40 +11,118 @@ import { computed } from 'vue'
 const props = defineProps({
   role: {
     type: String,
-    default: 'user'
+    required: true,
+    validator: (value) => ['admin', 'moderator', 'user', 'premium', 'verified'].includes(value)
+  },
+  size: {
+    type: String,
+    default: 'md',
+    validator: (value) => ['sm', 'md', 'lg'].includes(value)
+  },
+  variant: {
+    type: String,
+    default: 'solid',
+    validator: (value) => ['solid', 'outline', 'subtle'].includes(value)
+  },
+  showIcon: {
+    type: Boolean,
+    default: true
   }
 })
 
-const roleClass = computed(() => {
-  switch (props.role) {
-    case 'admin':
-      return 'bg-red-50 text-red-700 border-red-200'
-    case 'volunteer':
-      return 'bg-blue-50 text-blue-700 border-blue-200'
-    default:
-      return 'bg-green-50 text-green-700 border-green-200'
+const roleConfig = computed(() => {
+  const configs = {
+    admin: {
+      text: 'Admin',
+      icon: 'fas fa-crown',
+      colors: {
+        solid: 'bg-red-600 text-white',
+        outline: 'border-2 border-red-600 text-red-600 bg-transparent',
+        subtle: 'bg-red-100 text-red-800'
+      }
+    },
+    moderator: {
+      text: 'Moderator',
+      icon: 'fas fa-shield-alt',
+      colors: {
+        solid: 'bg-purple-600 text-white',
+        outline: 'border-2 border-purple-600 text-purple-600 bg-transparent',
+        subtle: 'bg-purple-100 text-purple-800'
+      }
+    },
+    user: {
+      text: 'User',
+      icon: 'fas fa-user',
+      colors: {
+        solid: 'bg-gray-600 text-white',
+        outline: 'border-2 border-gray-600 text-gray-600 bg-transparent',
+        subtle: 'bg-gray-100 text-gray-800'
+      }
+    },
+    premium: {
+      text: 'Premium',
+      icon: 'fas fa-star',
+      colors: {
+        solid: 'bg-yellow-600 text-white',
+        outline: 'border-2 border-yellow-600 text-yellow-600 bg-transparent',
+        subtle: 'bg-yellow-100 text-yellow-800'
+      }
+    },
+    verified: {
+      text: 'Verified',
+      icon: 'fas fa-check-circle',
+      colors: {
+        solid: 'bg-green-600 text-white',
+        outline: 'border-2 border-green-600 text-green-600 bg-transparent',
+        subtle: 'bg-green-100 text-green-800'
+      }
+    }
   }
+  
+  return configs[props.role] || configs.user
 })
 
-const roleDisplayName = computed(() => {
-  switch (props.role) {
-    case 'admin':
-      return 'Administrator'
-    case 'volunteer':
-      return 'Volunteer'
-    default:
-      return 'User'
+const badgeClasses = computed(() => {
+  const baseClasses = 'inline-flex items-center font-medium rounded-full transition-all duration-200'
+  
+  const sizeClasses = {
+    sm: 'px-2 py-0.5 text-xs',
+    md: 'px-2.5 py-1 text-sm',
+    lg: 'px-3 py-1.5 text-base'
   }
+  
+  const colorClasses = roleConfig.value.colors[props.variant]
+  
+  return `${baseClasses} ${sizeClasses[props.size]} ${colorClasses}`
+})
+
+const displayText = computed(() => {
+  return roleConfig.value.text
+})
+
+const icon = computed(() => {
+  return props.showIcon ? roleConfig.value.icon : null
 })
 </script>
 
 <style scoped>
-/* Role badge animation */
-.role-badge {
-  transition: all 0.2s ease-in-out;
+/* Hover effects */
+.role-badge:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.role-badge:hover {
-  transform: scale(1.02);
+/* Pulse animation for premium badges */
+.bg-yellow-600 {
+  animation: subtle-pulse 2s infinite;
+}
+
+@keyframes subtle-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.9;
+  }
 }
 </style>

@@ -25,9 +25,7 @@
             @click="$emit('close')"
             class="p-2 text-gray-400 hover:text-gray-600 hover:bg-white hover:bg-opacity-80 rounded-full transition-all duration-200 transform hover:scale-105"
           >
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
+            <i class="fas fa-times w-6 h-6"></i>
           </button>
         </div>
       </div>
@@ -46,7 +44,10 @@
           <!-- Details Section with cards -->
           <div class="space-y-6">
             <!-- Basic Info Card -->
-            <DetailCard title="Pet Details" :icon="InfoIcon" color="blue">
+            <DetailCard title="Pet Details" color="blue">
+              <template #icon>
+                <i class="fas fa-info-circle"></i>
+              </template>
               <div class="grid grid-cols-2 gap-4">
                 <InfoField 
                   label="Type" 
@@ -69,12 +70,18 @@
             </DetailCard>
 
             <!-- Description Card -->
-            <DetailCard title="Description" :icon="DocumentIcon" color="green">
+            <DetailCard title="Description" color="green">
+              <template #icon>
+                <i class="fas fa-file-text"></i>
+              </template>
               <p class="text-gray-700 leading-relaxed whitespace-pre-wrap">{{ announcement.description }}</p>
             </DetailCard>
 
             <!-- Location Card -->
-            <DetailCard title="Location" :icon="LocationIcon" color="red">
+            <DetailCard title="Location" color="red">
+              <template #icon>
+                <i class="fas fa-map-marker-alt"></i>
+              </template>
               <div class="space-y-3">
                 <p class="font-semibold text-gray-900 text-lg">{{ locationText }}</p>
                 
@@ -107,27 +114,30 @@
             <DetailCard 
               v-if="showContactInfo && hasContactInfo" 
               title="Contact Information" 
-              :icon="PhoneIcon" 
               color="purple"
             >
+              <template #icon>
+                <i class="fas fa-phone"></i>
+              </template>
               <div class="space-y-3">
                 <ContactLink
                   v-if="announcement.contactInfo?.phone"
                   type="phone"
                   :value="announcement.contactInfo.phone"
-                  :icon="PhoneIcon"
                 />
                 <ContactLink
                   v-if="announcement.contactInfo?.email"
                   type="email"
                   :value="announcement.contactInfo.email"
-                  :icon="EmailIcon"
                 />
               </div>
             </DetailCard>
 
             <!-- Meta Information Card -->
-            <DetailCard title="Additional Information" :icon="ClockIcon" color="yellow">
+            <DetailCard title="Additional Information" color="yellow">
+              <template #icon>
+                <i class="fas fa-clock"></i>
+              </template>
               <div class="grid grid-cols-1 gap-4">
                 <div class="flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0">
                   <span class="text-gray-600 font-medium">Posted</span>
@@ -151,57 +161,50 @@
         </div>
 
         <!-- Action Buttons with improved styling -->
-        <div class="flex justify-between items-center pt-8 border-t border-gray-200 mt-8">
-          <div class="flex space-x-3">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pt-8 border-t border-gray-200 mt-8">
+          <div class="flex">
             <ActionButton 
               @click="$emit('close')" 
               variant="outline"
-              class="px-6 py-3 text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-gray-400 transition-all duration-200"
+              size="md"
+              class="whitespace-nowrap"
             >
-              <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
+              <i class="fas fa-times mr-2"></i>
               Close
             </ActionButton>
           </div>
           
-          <div v-if="announcement.isOwner" class="flex space-x-3">
+          <div v-if="announcement.isOwner" class="flex flex-wrap gap-2">
             <ActionButton 
+              v-if="announcement.status !== 'resolved'"
               @click="$emit('edit', announcement)"
               variant="secondary"
-              class="px-6 py-3 bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 hover:border-blue-300 transition-all duration-200"
+              size="md"
+              class="whitespace-nowrap"
             >
-              <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-              </svg>
+              <i class="fas fa-edit mr-2"></i>
               Edit
             </ActionButton>
             
             <ActionButton 
               v-if="announcement.status === 'active'"
               @click="$emit('resolve', announcement)"
-              variant="primary"
-              class="px-6 py-3 bg-green-600 hover:bg-green-700 text-white border-green-600 hover:border-green-700 transition-all duration-200 transform hover:scale-105"
+              variant="success"
+              size="md"
+              class="whitespace-nowrap"
             >
-              <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-              </svg>
+              <i class="fas fa-check mr-2"></i>
               {{ resolveButtonText }}
             </ActionButton>
             
             <ActionButton 
               @click="handleDelete"
               variant="danger"
+              size="md"
               :loading="deleting"
-              class="px-6 py-3 bg-red-600 hover:bg-red-700 text-white border-red-600 hover:border-red-700 transition-all duration-200 transform hover:scale-105"
+              class="whitespace-nowrap"
             >
-              <svg v-if="!deleting" class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-              </svg>
-              <svg v-else class="animate-spin w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="m4 12a8 8 0 818-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
+              <i v-if="!deleting" class="fas fa-trash mr-2"></i>
               {{ deleting ? 'Deleting...' : 'Delete' }}
             </ActionButton>
           </div>
@@ -218,14 +221,6 @@ import DetailCard from '../cards/DetailCard.vue'
 import InfoField from '../ui/InfoField.vue'
 import ImageGallery from '../ui/ImageGallery.vue'
 import ContactLink from '../ui/ContactLink.vue'
-import StatusBadge from '../ui/StatusBadge.vue'
-// Import icons
-import InfoIcon from '../icons/InfoIcon.vue'
-import DocumentIcon from '../icons/DocumentIcon.vue'
-import LocationIcon from '../icons/LocationIcon.vue'
-import PhoneIcon from '../icons/PhoneIcon.vue'
-import EmailIcon from '../icons/EmailIcon.vue'
-import ClockIcon from '../icons/ClockIcon.vue'
 
 const props = defineProps({
   announcement: {
@@ -241,13 +236,6 @@ const currentImageIndex = ref(0)
 const deleting = ref(false)
 
 // Computed
-const currentImage = computed(() => {
-  if (props.announcement.images && props.announcement.images.length > 0) {
-    return props.announcement.images[currentImageIndex.value]
-  }
-  return null
-})
-
 const statusBadgeClass = computed(() => {
   switch (props.announcement.status) {
     case 'active':
@@ -281,7 +269,6 @@ const typeText = computed(() => {
 })
 
 const headerClass = computed(() => {
-  // Match header colors with card headers
   if (props.announcement.status === 'resolved') {
     return 'bg-green-100 border-b border-green-200'
   }
@@ -296,12 +283,10 @@ const headerClass = computed(() => {
 })
 
 const locationText = computed(() => {
-  // First try locationName from backend (preferred)
   if (props.announcement.locationName) {
     return props.announcement.locationName
   }
   
-  // Build location from locationDetails if available
   if (props.announcement.locationDetails) {
     const parts = []
     
@@ -322,7 +307,6 @@ const locationText = computed(() => {
     }
   }
   
-  // Fallback to building location from location object (for backward compatibility)
   if (props.announcement.location) {
     const parts = []
     
@@ -412,20 +396,6 @@ const resolveButtonText = computed(() => {
   }
 })
 
-const resolveButtonVariant = computed(() => {
-  const type = props.announcement.type || props.announcement.announcementType
-  switch (type) {
-    case 'lost':
-      return 'success'
-    case 'found':
-      return 'warning'
-    case 'adoption':
-      return 'primary'
-    default:
-      return 'success'
-  }
-})
-
 // Methods
 const handleDelete = () => {
   emit('delete', props.announcement)
@@ -453,66 +423,11 @@ const handleDelete = () => {
   }
 }
 
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
-}
-
 .animate-fade-in {
   animation: fadeIn 0.3s ease-out;
 }
 
 .animate-slide-up {
   animation: slideUp 0.4s ease-out;
-}
-
-.animate-pulse {
-  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
-/* Enhanced border style for image thumbnails */
-.border-3 {
-  border-width: 3px;
-}
-
-/* Custom scrollbar for the modal */
-.max-h-\[calc\(95vh-200px\)\]::-webkit-scrollbar {
-  width: 6px;
-}
-
-.max-h-\[calc\(95vh-200px\)\]::-webkit-scrollbar-track {
-  background: #f1f5f9;
-  border-radius: 10px;
-}
-
-.max-h-\[calc\(95vh-200px\)\]::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 10px;
-  transition: background-color 0.2s ease;
-}
-
-.max-h-\[calc\(95vh-200px\)\]::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
-}
-
-/* Better hover effects for interactive elements */
-.group:hover .group-hover\:scale-105 {
-  transform: scale(1.05);
-}
-
-/* Smooth transitions for all interactive elements */
-button, .cursor-pointer {
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* Focus visible improvements */
-button:focus-visible,
-select:focus-visible {
-  outline: 2px solid #3b82f6;
-  outline-offset: 2px;
 }
 </style>

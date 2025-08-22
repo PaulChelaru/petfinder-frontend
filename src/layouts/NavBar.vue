@@ -1,325 +1,340 @@
 <template>
-  <nav class="bg-white shadow-lg border-b border-gray-200">
+  <nav class="bg-white border-b-2 border-primary-500 sticky top-0 z-50 backdrop-blur-sm bg-white/90">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="flex justify-between h-16">
-        <!-- Logo and Brand -->
-        <div class="flex items-center">
-          <router-link to="/" class="flex items-center space-x-3">
-            <div class="w-10 h-10 bg-gradient-to-br from-primary-600 to-primary-700 rounded-xl flex items-center justify-center shadow-lg">
-              <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 2C10.896 2 10 2.896 10 4s.896 2 2 2 2-.896 2-2-.896-2-2-2zM8.5 7C7.672 7 7 7.672 7 8.5S7.672 10 8.5 10 10 9.328 10 8.5 9.328 7 8.5 7zm7 0c-.828 0-1.5.672-1.5 1.5S14.672 10 15.5 10 17 9.328 17 8.5 16.328 7 15.5 7zM12 9c-2.5 0-4.5 1.5-4.5 4 0 1.5 1 3 2.5 4 .8.5 1.7.8 2.5.8s1.7-.3 2.5-.8c1.5-1 2.5-2.5 2.5-4 0-2.5-2-4-4.5-4zm-6 4.5C5.5 12.672 4.828 12 4 12s-1.5.672-1.5 1.5.672 1.5 1.5 1.5.828-.672 1.5-1.5-.672-1.5-1.5-1.5zm12 0c-.828 0-1.5.672-1.5 1.5s.672 1.5 1.5 1.5 1.5-.672 1.5-1.5-.672-1.5-1.5-1.5z"/>
-              </svg>
+      <div class="flex justify-between items-center h-16">
+        <!-- Logo -->
+        <div class="flex-shrink-0 flex items-center">
+          <router-link 
+            to="/" 
+            class="flex items-center space-x-3 text-2xl font-bold text-primary-600 hover:text-primary-700 transition-colors duration-200"
+          >
+            <div class="w-10 h-10 bg-gradient-to-r from-primary-500 to-primary-600 rounded-lg flex items-center justify-center transform hover:scale-105 transition-transform duration-200">
+              <i class="fas fa-paw text-white text-xl"></i>
             </div>
-            <div class="flex flex-col">
-              <span class="text-xl font-bold text-gray-900">PetFinder</span>
-              <span class="text-xs text-gray-500 -mt-1">Lost & Found Pets</span>
-            </div>
+            <span class="hidden sm:block">PetFinder</span>
           </router-link>
         </div>
 
-        <!-- Navigation Links -->
-        <div class="hidden lg:flex items-center space-x-1">
-          <router-link
-            to="/"
-            class="nav-link"
-            active-class="nav-link-active"
-          >
-            <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-            </svg>
-            Home
-          </router-link>
-          
-          <router-link
-            to="/announcements"
-            class="nav-link"
-            active-class="nav-link-active"
-          >
-            <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-            Browse Pets
-          </router-link>
-          
-          <router-link
-            v-if="isAuthenticated"
-            to="/my-announcements"
-            class="nav-link"
-            active-class="nav-link-active"
-          >
-            <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-            </svg>
-            My Announcements
-          </router-link>
-        </div>
-
-        <!-- User Section -->
-        <div class="hidden lg:flex items-center space-x-3">
-          <template v-if="isAuthenticated">
-            <!-- User Info with Dashboard Link -->
+        <!-- Desktop Navigation -->
+        <div class="hidden md:block">
+          <div class="ml-10 flex items-baseline space-x-8">
             <router-link
-              to="/dashboard"
-              class="flex items-center space-x-2 px-3 py-2 h-10 rounded-lg hover:bg-gray-50 transition-colors duration-200 group"
+              to="/"
+              class="px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-primary-50"
+              :class="isActiveRoute('/') ? 'text-primary-700 bg-primary-50' : 'text-gray-700 hover:text-primary-600'"
             >
-              <div class="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center group-hover:bg-primary-200 transition-colors duration-200">
-                <span class="text-primary-700 font-medium text-sm">
-                  {{ userInitials }}
-                </span>
-              </div>
-              <div class="hidden sm:block">
-                <div class="text-gray-700 text-sm font-medium leading-tight">{{ user?.firstName || user?.email }}</div>
-                <div class="text-gray-500 text-xs leading-tight">Go to Dashboard</div>
-              </div>
+              <i class="fas fa-home mr-2"></i>
+              Home
             </router-link>
             
-            <!-- Logout Button -->
-            <ActionButton
-              variant="outline"
-              size="sm"
-              :loading="loading"
-              @click="handleLogout"
-              class="h-10 whitespace-nowrap"
+            <router-link
+              to="/announcements"
+              class="px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-primary-50"
+              :class="isActiveRoute('/announcements') ? 'text-primary-700 bg-primary-50' : 'text-gray-700 hover:text-primary-600'"
             >
-              <div class="flex items-center">
-                <svg class="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013 3v1" />
-                </svg>
-                <span class="hidden sm:inline">Logout</span>
-              </div>
-            </ActionButton>
-          </template>
-          
-          <template v-else>
-            <router-link to="/login">
-              <ActionButton variant="outline" size="sm">
-                Login
-              </ActionButton>
+              <i class="fas fa-bullhorn mr-2"></i>
+              Announcements
             </router-link>
-            <router-link to="/register">
-              <ActionButton variant="primary" size="sm">
+
+            <router-link
+              v-if="authStore.isAuthenticated"
+              to="/my-announcements"
+              class="px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-primary-50"
+              :class="isActiveRoute('/my-announcements') ? 'text-primary-700 bg-primary-50' : 'text-gray-700 hover:text-primary-600'"
+            >
+              <i class="fas fa-list mr-2"></i>
+              My Announcements
+            </router-link>
+
+            <router-link
+              v-if="authStore.isAuthenticated"
+              to="/dashboard"
+              class="px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-primary-50"
+              :class="isActiveRoute('/dashboard') ? 'text-primary-700 bg-primary-50' : 'text-gray-700 hover:text-primary-600'"
+            >
+              <i class="fas fa-tachometer-alt mr-2"></i>
+              Dashboard
+            </router-link>
+          </div>
+        </div>
+
+        <!-- Desktop Auth Buttons -->
+        <div class="hidden md:block">
+          <div class="ml-4 flex items-center space-x-4">
+            <template v-if="!authStore.isAuthenticated">
+              <router-link
+                to="/login"
+                class="px-4 py-2 text-sm font-medium text-gray-700 hover:text-primary-600 transition-colors duration-200"
+              >
+                <i class="fas fa-sign-in-alt mr-2"></i>
+                Sign In
+              </router-link>
+              <router-link
+                to="/register"
+                class="px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 transition-all duration-200 transform hover:scale-105 shadow-sm hover:shadow-md"
+              >
+                <i class="fas fa-user-plus mr-2"></i>
                 Sign Up
-              </ActionButton>
-            </router-link>
-          </template>
+              </router-link>
+            </template>
+            
+            <template v-else>
+              <!-- User Dropdown -->
+              <div class="relative" ref="userMenuRef">
+                <button
+                  @click="toggleUserMenu"
+                  class="flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:text-primary-600 hover:bg-primary-50 transition-all duration-200"
+                >
+                  <div class="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center">
+                    <i class="fas fa-user text-primary-600"></i>
+                  </div>
+                  <span class="hidden lg:block">{{ authStore.user?.firstName || 'User' }}</span>
+                  <i class="fas fa-chevron-down text-xs transition-transform duration-200" :class="{ 'transform rotate-180': showUserMenu }"></i>
+                </button>
+
+                <!-- Dropdown Menu -->
+                <Transition
+                  enter-active-class="transition ease-out duration-200"
+                  enter-from-class="transform opacity-0 scale-95"
+                  enter-to-class="transform opacity-100 scale-100"
+                  leave-active-class="transition ease-in duration-150"
+                  leave-from-class="transform opacity-100 scale-100"
+                  leave-to-class="transform opacity-0 scale-95"
+                >
+                  <div
+                    v-show="showUserMenu"
+                    class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50"
+                  >
+                    <router-link
+                      to="/profile"
+                      class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-primary-50 hover:text-primary-600 transition-colors duration-200"
+                      @click="showUserMenu = false"
+                    >
+                      <i class="fas fa-user-circle mr-3 text-gray-400"></i>
+                      Profile
+                    </router-link>
+                    
+                    <router-link
+                      to="/settings"
+                      class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-primary-50 hover:text-primary-600 transition-colors duration-200"
+                      @click="showUserMenu = false"
+                    >
+                      <i class="fas fa-cog mr-3 text-gray-400"></i>
+                      Settings
+                    </router-link>
+                    
+                    <div class="border-t border-gray-100 my-1"></div>
+                    
+                    <button
+                      @click="handleLogout"
+                      class="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors duration-200"
+                    >
+                      <i class="fas fa-sign-out-alt mr-3 text-red-500"></i>
+                      Sign Out
+                    </button>
+                  </div>
+                </Transition>
+              </div>
+            </template>
+          </div>
         </div>
 
         <!-- Mobile menu button -->
-        <div class="lg:hidden flex items-center">
+        <div class="md:hidden">
           <button
-            @click="showMobileMenu = !showMobileMenu"
-            class="text-gray-500 hover:text-gray-700 focus:outline-none focus:text-gray-700 p-2 rounded-md"
+            @click="toggleMobileMenu"
+            class="p-2 rounded-lg text-gray-600 hover:text-primary-600 hover:bg-primary-50 transition-all duration-200"
           >
-            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path v-if="!showMobileMenu" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-              <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
+            <i class="fas fa-bars text-xl" :class="{ 'hidden': showMobileMenu }"></i>
+            <i class="fas fa-times text-xl" :class="{ 'hidden': !showMobileMenu }"></i>
           </button>
         </div>
       </div>
     </div>
 
-    <!-- Mobile Menu -->
-    <div v-show="showMobileMenu" class="lg:hidden">
-      <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-gray-50 border-t border-gray-200">
-        <router-link
-          to="/"
-          class="mobile-nav-link"
-          active-class="mobile-nav-link-active"
-          @click="showMobileMenu = false"
-        >
-          <svg class="w-4 h-4 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-          </svg>
-          Home
-        </router-link>
-        
-        <router-link
-          to="/announcements"
-          class="mobile-nav-link"
-          active-class="mobile-nav-link-active"
-          @click="showMobileMenu = false"
-        >
-          <svg class="w-4 h-4 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
-          Browse Pets
-        </router-link>
-        
-        <router-link
-          v-if="isAuthenticated"
-          to="/my-announcements"
-          class="mobile-nav-link"
-          active-class="mobile-nav-link-active"
-          @click="showMobileMenu = false"
-        >
-          <svg class="w-4 h-4 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-          </svg>
-          My Announcements
-        </router-link>
-        
-        <router-link
-          v-if="isAuthenticated"
-          to="/dashboard"
-          class="mobile-nav-link"
-          active-class="mobile-nav-link-active"
-          @click="showMobileMenu = false"
-        >
-          <svg class="w-4 h-4 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
-          </svg>
-          Dashboard
-        </router-link>
-        
-        <template v-if="isAuthenticated">
-          <div class="pt-4 pb-2 px-4 border-t border-gray-200">
-            <div class="flex items-center space-x-3 mb-3">
-              <div class="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center">
-                <span class="text-primary-700 font-medium text-sm">
-                  {{ userInitials }}
-                </span>
-              </div>
-              <div>
-                <div class="text-gray-700 text-sm font-medium">{{ user?.firstName || user?.email }}</div>
-                <div class="text-gray-500 text-xs">{{ user?.email }}</div>
-              </div>
-            </div>
-            <ActionButton
-              variant="outline"
-              size="sm"
-              :loading="loading"
-              @click="handleLogout"
-              full-width
-              class="mt-2"
+    <!-- Mobile Navigation -->
+    <Transition
+      enter-active-class="transition ease-out duration-200"
+      enter-from-class="transform opacity-0 scale-95"
+      enter-to-class="transform opacity-100 scale-100"
+      leave-active-class="transition ease-in duration-150"
+      leave-from-class="transform opacity-100 scale-100"
+      leave-to-class="transform opacity-0 scale-95"
+    >
+      <div v-show="showMobileMenu" class="md:hidden border-t border-gray-200 bg-white">
+        <div class="px-2 pt-2 pb-3 space-y-1">
+          <router-link
+            to="/"
+            class="flex items-center px-3 py-2 rounded-lg text-base font-medium transition-all duration-200"
+            :class="isActiveRoute('/') ? 'text-primary-700 bg-primary-50' : 'text-gray-700 hover:text-primary-600 hover:bg-primary-50'"
+            @click="showMobileMenu = false"
+          >
+            <i class="fas fa-home mr-3"></i>
+            Home
+          </router-link>
+          
+          <router-link
+            to="/announcements"
+            class="flex items-center px-3 py-2 rounded-lg text-base font-medium transition-all duration-200"
+            :class="isActiveRoute('/announcements') ? 'text-primary-700 bg-primary-50' : 'text-gray-700 hover:text-primary-600 hover:bg-primary-50'"
+            @click="showMobileMenu = false"
+          >
+            <i class="fas fa-bullhorn mr-3"></i>
+            Announcements
+          </router-link>
+
+          <router-link
+            v-if="authStore.isAuthenticated"
+            to="/my-announcements"
+            class="flex items-center px-3 py-2 rounded-lg text-base font-medium transition-all duration-200"
+            :class="isActiveRoute('/my-announcements') ? 'text-primary-700 bg-primary-50' : 'text-gray-700 hover:text-primary-600 hover:bg-primary-50'"
+            @click="showMobileMenu = false"
+          >
+            <i class="fas fa-list mr-3"></i>
+            My Announcements
+          </router-link>
+
+          <router-link
+            v-if="authStore.isAuthenticated"
+            to="/dashboard"
+            class="flex items-center px-3 py-2 rounded-lg text-base font-medium transition-all duration-200"
+            :class="isActiveRoute('/dashboard') ? 'text-primary-700 bg-primary-50' : 'text-gray-700 hover:text-primary-600 hover:bg-primary-50'"
+            @click="showMobileMenu = false"
+          >
+            <i class="fas fa-tachometer-alt mr-3"></i>
+            Dashboard
+          </router-link>
+
+          <template v-if="!authStore.isAuthenticated">
+            <div class="border-t border-gray-200 my-2"></div>
+            <router-link
+              to="/login"
+              class="flex items-center px-3 py-2 rounded-lg text-base font-medium text-gray-700 hover:text-primary-600 hover:bg-primary-50 transition-all duration-200"
+              @click="showMobileMenu = false"
             >
-              <div class="flex items-center justify-center">
-                <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013 3v1" />
-                </svg>
-                Logout
+              <i class="fas fa-sign-in-alt mr-3"></i>
+              Sign In
+            </router-link>
+            <router-link
+              to="/register"
+              class="flex items-center px-3 py-2 rounded-lg text-base font-medium text-white bg-primary-600 hover:bg-primary-700 transition-all duration-200 mx-3 mt-2"
+              @click="showMobileMenu = false"
+            >
+              <i class="fas fa-user-plus mr-3"></i>
+              Sign Up
+            </router-link>
+          </template>
+
+          <template v-else>
+            <div class="border-t border-gray-200 my-2"></div>
+            <div class="flex items-center px-3 py-2">
+              <div class="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center mr-3">
+                <i class="fas fa-user text-primary-600"></i>
               </div>
-            </ActionButton>
-          </div>
-        </template>
-        
-        <template v-else>
-          <div class="pt-4 pb-2 px-4 border-t border-gray-200 space-y-2">
-            <router-link to="/login">
-              <ActionButton variant="outline" size="sm" full-width>
-                Login
-              </ActionButton>
+              <span class="text-sm font-medium text-gray-700">{{ authStore.user?.firstName || 'User' }}</span>
+            </div>
+            
+            <router-link
+              to="/profile"
+              class="flex items-center px-3 py-2 rounded-lg text-base font-medium text-gray-700 hover:text-primary-600 hover:bg-primary-50 transition-all duration-200"
+              @click="showMobileMenu = false"
+            >
+              <i class="fas fa-user-circle mr-3"></i>
+              Profile
             </router-link>
-            <router-link to="/register">
-              <ActionButton variant="primary" size="sm" full-width>
-                Sign Up
-              </ActionButton>
+            
+            <router-link
+              to="/settings"
+              class="flex items-center px-3 py-2 rounded-lg text-base font-medium text-gray-700 hover:text-primary-600 hover:bg-primary-50 transition-all duration-200"
+              @click="showMobileMenu = false"
+            >
+              <i class="fas fa-cog mr-3"></i>
+              Settings
             </router-link>
-          </div>
-        </template>
+            
+            <button
+              @click="handleLogout"
+              class="flex items-center w-full px-3 py-2 rounded-lg text-base font-medium text-red-600 hover:bg-red-50 transition-all duration-200"
+            >
+              <i class="fas fa-sign-out-alt mr-3"></i>
+              Sign Out
+            </button>
+          </template>
+        </div>
       </div>
-    </div>
+    </Transition>
   </nav>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, onMounted, onUnmounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useToastStore } from '@/stores/toast'
-import ActionButton from '@/components/buttons/ActionButton.vue'
 
+const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 const toastStore = useToastStore()
 
 const showMobileMenu = ref(false)
-const loading = ref(false)
+const showUserMenu = ref(false)
+const userMenuRef = ref(null)
 
-const isAuthenticated = computed(() => authStore.isAuthenticated)
-const user = computed(() => authStore.user)
+const isActiveRoute = (path) => {
+  return route.path === path
+}
 
-const userInitials = computed(() => {
-  if (!user.value) return '?'
-  const firstName = user.value.firstName || ''
-  const lastName = user.value.lastName || ''
-  const email = user.value.email || ''
-  
-  if (firstName && lastName) {
-    return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase()
-  } else if (firstName) {
-    return firstName.charAt(0).toUpperCase()
-  } else if (email) {
-    return email.charAt(0).toUpperCase()
-  }
-  return '?'
-})
+const toggleMobileMenu = () => {
+  showMobileMenu.value = !showMobileMenu.value
+}
+
+const toggleUserMenu = () => {
+  showUserMenu.value = !showUserMenu.value
+}
 
 const handleLogout = async () => {
-  loading.value = true
   try {
     await authStore.logout()
-    toastStore.showSuccess('Logged out successfully')
+    showUserMenu.value = false
     showMobileMenu.value = false
+    
+    toastStore.success({
+      title: 'Signed Out',
+      message: 'You have been successfully signed out. See you soon!',
+      duration: 4000
+    })
+    
     router.push('/')
   } catch (error) {
-    toastStore.showError('Error logging out')
-  } finally {
-    loading.value = false
+    console.error('Logout error:', error)
+    toastStore.error({
+      title: 'Sign Out Error',
+      message: 'An error occurred while signing out. Please try again.'
+    })
   }
 }
+
+// Close menus when clicking outside
+const handleClickOutside = (event) => {
+  if (userMenuRef.value && !userMenuRef.value.contains(event.target)) {
+    showUserMenu.value = false
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside)
+})
 </script>
 
 <style scoped>
-.nav-link {
-  display: flex;
-  align-items: center;
-  padding: 0.5rem 0.75rem;
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #4b5563;
-  transition: all 0.2s ease;
-}
-
-.nav-link:hover {
-  color: #111827;
-  background-color: #f3f4f6;
-}
-
-.nav-link-active {
-  color: #2563eb;
-  background-color: #eff6ff;
-}
-
-.nav-link-active:hover {
-  color: #1d4ed8;
-  background-color: #dbeafe;
-}
-
-.mobile-nav-link {
-  display: flex;
-  align-items: center;
-  padding: 0.5rem 0.75rem;
-  border-radius: 0.5rem;
-  font-size: 1rem;
-  font-weight: 500;
-  color: #4b5563;
-  transition: all 0.2s ease;
-}
-
-.mobile-nav-link:hover {
-  color: #111827;
-  background-color: #f3f4f6;
-}
-
-.mobile-nav-link-active {
-  color: #2563eb;
-  background-color: #eff6ff;
-}
-
-.mobile-nav-link-active:hover {
-  color: #1d4ed8;
-  background-color: #dbeafe;
+/* Add any custom styles if needed */
+.bg-grid-pattern {
+  background-image: radial-gradient(rgba(99, 102, 241, 0.1) 1px, transparent 1px);
+  background-size: 20px 20px;
 }
 </style>

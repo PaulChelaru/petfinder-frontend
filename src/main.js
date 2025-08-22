@@ -5,6 +5,9 @@ import App from './App.vue'
 import './style.css'
 import { useAuthStore } from './stores/auth'
 
+// Import Font Awesome
+import '@fortawesome/fontawesome-free/css/all.css'
+
 const app = createApp(App)
 const pinia = createPinia()
 
