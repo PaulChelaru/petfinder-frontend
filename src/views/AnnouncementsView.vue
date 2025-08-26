@@ -11,9 +11,8 @@
         </div>
         <ActionButton 
           v-if="authStore.isAuthenticated"
-          @click="showCreateModal = true"
+          @click="handleCreateClick"
           variant="primary"
-          icon="add"
           class="mt-4 sm:mt-0"
         >
           Create Announcement
@@ -71,6 +70,7 @@
     <!-- Create/Edit Modal -->
     <AnnouncementFormModal
       v-if="showCreateModal || editingAnnouncement"
+      :is-open="showCreateModal || !!editingAnnouncement"
       :announcement="editingAnnouncement"
       @close="handleCloseModal"
       @success="handleAnnouncementSaved"
@@ -96,7 +96,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, watch } from 'vue'
+import { ref, reactive, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useToastStore } from '@/stores/toast'
@@ -125,6 +125,9 @@ const pagination = reactive({
   total: 0
 })
 
+// Request management
+let currentRequest = null
+
 const filters = reactive({
   petType: '',
   type: '',
@@ -144,6 +147,15 @@ const resolvingAnnouncement = ref(null)
 // Methods
 const loadAnnouncements = async () => {
   try {
+    // Cancel previous request if still pending
+    if (currentRequest) {
+      currentRequest.abort()
+    }
+
+    // Create new abort controller for this request
+    const abortController = new AbortController()
+    currentRequest = abortController
+
     loading.value = true
     console.log('🔍 Loading announcements with filters:', filters)
     
@@ -165,17 +177,28 @@ const loadAnnouncements = async () => {
       }
     })
 
-    const response = await announcementApi.list(params)
+    const response = await announcementApi.list(params, abortController.signal)
     
-    announcements.value = response.data.announcements || []
-    pagination.total = response.data.pagination?.total || 0
-    pagination.page = response.data.pagination?.page || 1
+    // Only update if this request wasn't aborted
+    if (!abortController.signal.aborted) {
+      announcements.value = response.data.announcements || []
+      pagination.total = response.data.pagination?.total || 0
+      pagination.page = response.data.pagination?.page || 1
+    }
     
   } catch (error) {
+    if (error.name === 'AbortError') {
+      console.log('Request was aborted')
+      return
+    }
     console.error('Error loading announcements:', error)
     toastStore.showError('Failed to load announcements. Please try again.')
   } finally {
-    loading.value = false
+    // Only set loading to false if this request wasn't aborted
+    if (currentRequest && !currentRequest.signal.aborted) {
+      loading.value = false
+      currentRequest = null
+    }
   }
 }
 
@@ -209,6 +232,7 @@ const handleResetFilters = () => {
 }
 
 const handleViewAnnouncement = (announcement) => {
+  console.log('AnnouncementsView - setting viewingAnnouncement:', announcement)
   viewingAnnouncement.value = announcement
 }
 
@@ -241,11 +265,7 @@ const confirmDelete = async () => {
   try {
     await announcementApi.delete(deletingAnnouncement.value.id)
     
-    toastStore.addToast({
-      type: 'success',
-      title: 'Success',
-      message: 'Announcement deleted successfully.'
-    })
+    toastStore.showSuccess('Announcement deleted successfully.')
     
     viewingAnnouncement.value = null
     await loadAnnouncements()
@@ -262,11 +282,7 @@ const confirmDelete = async () => {
       errorMessage = 'Announcement not found or already deleted.'
     }
     
-    toastStore.addToast({
-      type: 'error',
-      title: 'Error',
-      message: errorMessage
-    })
+    toastStore.showError(errorMessage)
     
     throw error // Re-throw to be handled by the modal
   }
@@ -277,30 +293,40 @@ const handleCloseModal = () => {
   editingAnnouncement.value = null
 }
 
+const handleCreateClick = () => {
+  console.log('Create button clicked!')
+  console.log('showCreateModal before:', showCreateModal.value)
+  console.log('editingAnnouncement before:', editingAnnouncement.value)
+  showCreateModal.value = true
+  console.log('showCreateModal after:', showCreateModal.value)
+}
+
 const handleAnnouncementSaved = () => {
   handleCloseModal()
   loadAnnouncements()
   
-  toastStore.addToast({
-    type: 'success',
-    title: 'Success',
-    message: editingAnnouncement.value ? 'Announcement updated successfully.' : 'Announcement created successfully.'
-  })
+  toastStore.showSuccess(
+    editingAnnouncement.value ? 'Announcement updated successfully.' : 'Announcement created successfully.'
+  )
 }
 
 const handleAnnouncementResolved = () => {
   resolvingAnnouncement.value = null
   loadAnnouncements()
   
-  toastStore.addToast({
-    type: 'success',
-    title: 'Success',
-    message: 'Announcement resolved successfully.'
-  })
+  toastStore.showSuccess('Announcement resolved successfully.')
 }
 
 // Lifecycle
 onMounted(() => {
   loadAnnouncements()
+})
+
+onUnmounted(() => {
+  // Cancel any pending request when component is unmounted
+  if (currentRequest) {
+    currentRequest.abort()
+    currentRequest = null
+  }
 })
 </script>

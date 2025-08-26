@@ -111,22 +111,21 @@ export const useAuthStore = defineStore('auth', () => {
         role: payload.rol
       }
       
-      toastStore.showSuccess('Login successful!')
       return { success: true }
     } catch (error) {
       const message = error.response?.data?.message || 'Login failed'
-      toastStore.showError(message)
-      return { success: false, error: message }
+      throw error // Re-throw the error to be handled by the component
     } finally {
       loading.value = false
     }
   }
 
   const register = async (userData) => {
-    const toastStore = useToastStore()
+    console.log('AuthStore register called with:', userData)
     loading.value = true
     
     try {
+      console.log('Making API call to register...')
       const response = await authApi.register(userData)
       const authToken = response.data.token
       
@@ -141,12 +140,9 @@ export const useAuthStore = defineStore('auth', () => {
         role: payload.rol
       }
       
-      toastStore.showSuccess('Registration successful!')
       return { success: true }
     } catch (error) {
-      const message = error.response?.data?.message || 'Registration failed'
-      toastStore.showError(message)
-      return { success: false, error: message }
+      throw error // Re-throw the error to be handled by the component
     } finally {
       loading.value = false
     }

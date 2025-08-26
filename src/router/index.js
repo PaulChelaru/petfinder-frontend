@@ -20,12 +20,6 @@ const routes = [
     meta: { requiresGuest: true }
   },
   {
-    path: '/dashboard',
-    name: 'Dashboard',
-    component: () => import('../views/DashboardView.vue'),
-    meta: { requiresAuth: true }
-  },
-  {
     path: '/announcements',
     name: 'Announcements',
     component: () => import('../views/AnnouncementsView.vue')
@@ -82,10 +76,10 @@ router.beforeEach((to, from, next) => {
     return // checkAuthStatus will handle redirect
   }
   
-  if (to.meta.requiresAuth && !authStore.isAuthenticated) {
+  if (to.matched.some(record => record.meta.requiresAuth) && !authStore.isAuthenticated) {
     next('/login')
-  } else if (to.meta.requiresGuest && authStore.isAuthenticated) {
-    next('/dashboard')
+  } else if (to.matched.some(record => record.meta.requiresGuest) && authStore.isAuthenticated) {
+    next('/profile')
   } else {
     next()
   }

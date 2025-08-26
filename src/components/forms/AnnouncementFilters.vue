@@ -26,9 +26,6 @@
           <option value="">All Pets</option>
           <option value="dog">Dog</option>
           <option value="cat">Cat</option>
-          <option value="bird">Bird</option>
-          <option value="rabbit">Rabbit</option>
-          <option value="other">Other</option>
         </select>
       </div>
 
@@ -37,7 +34,6 @@
         <label class="block text-sm font-medium text-gray-700 mb-2">Posted Since</label>
         <select 
           v-model="localFilters.dateRange"
-          @change="updateDateFilter"
           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
         >
           <option value="">Any Time</option>
@@ -115,20 +111,6 @@
         </div>
       </div>
     </div>
-
-    <!-- Search Bar -->
-    <div class="border-t pt-4 mt-4">
-      <label class="block text-sm font-medium text-gray-700 mb-2">Search</label>
-      <div class="relative">
-        <input
-          v-model="localFilters.search"
-          type="text"
-          placeholder="Search by pet name, breed, description..."
-          class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-        >
-        <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
-      </div>
-    </div>
   </div>
 </template>
 
@@ -159,30 +141,23 @@ const locationStatus = ref('')
 
 // Flag to prevent infinite loops
 let isUpdatingFromProps = false
-let searchTimeout = null
-
-// Watch for changes and emit updates (with debounce for search)
+// Watch for changes and emit updates
 watch(localFilters, (newFilters, oldFilters) => {
-  if (!isUpdatingFromProps) {
-    // Check if only search changed for debouncing
-    if (newFilters.search !== oldFilters.search && 
-        Object.keys(newFilters).every(key => 
-          key === 'search' || newFilters[key] === oldFilters[key]
-        )) {
-      
-      // Debounce search input
-      if (searchTimeout) {
-        clearTimeout(searchTimeout)
-      }
-      
-      searchTimeout = setTimeout(() => {
-        emit('update:filters', { ...newFilters })
-      }, 300) // Wait 300ms after user stops typing
-    } else {
-      // Emit immediately for non-search filter changes
-      emit('update:filters', { ...newFilters })
-    }
+  if (isUpdatingFromProps) return
+  
+  // Calculate postedSince based on dateRange before emitting
+  const filtersToEmit = { ...newFilters }
+  if (filtersToEmit.dateRange) {
+    const days = parseInt(filtersToEmit.dateRange)
+    const date = new Date()
+    date.setDate(date.getDate() - days)
+    filtersToEmit.postedSince = date.toISOString().split('T')[0] // Use YYYY-MM-DD format
+  } else {
+    filtersToEmit.postedSince = null
   }
+  
+  // Emit immediately for all filter changes
+  emit('update:filters', filtersToEmit)
 }, { deep: true })
 
 // Watch props.filters for external changes
@@ -289,17 +264,6 @@ const getCurrentLocation = () => {
   )
 }
 
-const updateDateFilter = () => {
-  if (localFilters.dateRange) {
-    const days = parseInt(localFilters.dateRange)
-    const date = new Date()
-    date.setDate(date.getDate() - days)
-    localFilters.postedSince = date.toISOString().split('T')[0] // Use YYYY-MM-DD format
-  } else {
-    localFilters.postedSince = null
-  }
-}
-
 const resetFilters = () => {
   // Reset all filters (no status filter for public announcements)
   Object.assign(localFilters, {
@@ -309,8 +273,7 @@ const resetFilters = () => {
     latitude: null,
     maxDistance: null,
     postedSince: null,
-    dateRange: '',
-    search: ''
+    dateRange: ''
   })
   
   // Hide location filter
@@ -320,11 +283,4 @@ const resetFilters = () => {
   // Emit reset event
   emit('reset')
 }
-
-// Cleanup
-onBeforeUnmount(() => {
-  if (searchTimeout) {
-    clearTimeout(searchTimeout)
-  }
-})
 </script>

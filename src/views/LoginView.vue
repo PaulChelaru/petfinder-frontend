@@ -127,7 +127,7 @@
                   class="w-full transform hover:scale-105 transition-all duration-300 shadow-md hover:shadow-lg"
                 >
                   <i class="fas fa-user-plus w-5 h-5 mr-2"></i>
-                  Create new account
+                  Create account
                 </ActionButton>
               </router-link>
             </div>
@@ -206,20 +206,21 @@ const handleLogin = async () => {
       password: form.password
     })
     
+    // Only show success notification if login was successful
     toastStore.success({
       title: 'Welcome back!',
       message: 'You have successfully signed in to your account.',
       actions: [
         {
-          label: 'Go to Dashboard',
+          label: 'Go to Profile',
           primary: true,
-          handler: () => router.push('/dashboard')
+          handler: () => router.push('/profile')
         }
       ]
     })
     
-    // Redirect to dashboard or intended page
-    const redirect = router.currentRoute.value.query.redirect || '/dashboard'
+    // Redirect to profile or intended page
+    const redirect = router.currentRoute.value.query.redirect || '/profile'
     router.push(redirect)
   } catch (error) {
     console.error('Login error:', error)
@@ -233,6 +234,18 @@ const handleLogin = async () => {
             label: 'Reset Password',
             primary: false,
             handler: () => router.push('/forgot-password')
+          }
+        ]
+      })
+    } else if (error.response?.status === 403) {
+      toastStore.error({
+        title: 'Access Forbidden',
+        message: 'Your account access has been restricted. Please contact support for assistance.',
+        actions: [
+          {
+            label: 'Contact Support',
+            primary: true,
+            handler: () => window.open('mailto:support@petfinder.com', '_blank')
           }
         ]
       })

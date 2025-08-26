@@ -45,16 +45,6 @@
               <i class="fas fa-list mr-2"></i>
               My Announcements
             </router-link>
-
-            <router-link
-              v-if="authStore.isAuthenticated"
-              to="/dashboard"
-              class="px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-primary-50"
-              :class="isActiveRoute('/dashboard') ? 'text-primary-700 bg-primary-50' : 'text-gray-700 hover:text-primary-600'"
-            >
-              <i class="fas fa-tachometer-alt mr-2"></i>
-              Dashboard
-            </router-link>
           </div>
         </div>
 
@@ -192,17 +182,6 @@
           >
             <i class="fas fa-list mr-3"></i>
             My Announcements
-          </router-link>
-
-          <router-link
-            v-if="authStore.isAuthenticated"
-            to="/dashboard"
-            class="flex items-center px-3 py-2 rounded-lg text-base font-medium transition-all duration-200"
-            :class="isActiveRoute('/dashboard') ? 'text-primary-700 bg-primary-50' : 'text-gray-700 hover:text-primary-600 hover:bg-primary-50'"
-            @click="showMobileMenu = false"
-          >
-            <i class="fas fa-tachometer-alt mr-3"></i>
-            Dashboard
           </router-link>
 
           <template v-if="!authStore.isAuthenticated">

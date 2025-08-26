@@ -4,29 +4,42 @@
       <!-- Header with dynamic background based on type and status -->
       <div :class="headerClass" class="px-8 py-6 border-b border-gray-100">
         <div class="flex items-center justify-between">
-          <div class="flex items-center space-x-4">
-            <h2 class="text-2xl font-bold text-gray-900 leading-tight">{{ announcement.title }}</h2>
-            <div class="flex items-center space-x-2">
-              <span 
-                :class="typeBadgeClass"
-                class="px-3 py-1 text-sm font-semibold rounded-full shadow-sm"
-              >
-                {{ typeText }}
-              </span>
-              <span 
-                :class="statusBadgeClass"
-                class="px-3 py-1 text-sm font-semibold rounded-full shadow-sm"
-              >
-                {{ statusText }}
-              </span>
+          <div class="flex items-center justify-between w-full">
+            <div class="flex items-center space-x-4">
+              <!-- Icon badge -->
+              <div :class="iconBadgeClasses" class="p-3 rounded-full flex items-center justify-center shadow-lg">
+                <i v-if="props.announcement?.status === 'resolved'" class="fas fa-check-circle text-white text-xl"></i>
+                <i v-else-if="props.announcement?.type === 'lost'" class="fas fa-search text-white text-xl"></i>
+                <i v-else-if="props.announcement?.type === 'found'" class="fas fa-heart text-white text-xl"></i>
+                <i v-else class="fas fa-paw text-white text-xl"></i>
+              </div>
+              
+              <div>
+                <h2 class="text-2xl font-bold text-gray-900 leading-tight">{{ announcementTitle }}</h2>
+                <div class="flex items-center space-x-2 mt-1">
+                  <span 
+                    :class="typeBadgeClass"
+                    class="px-3 py-1 text-sm font-semibold rounded-full shadow-sm"
+                  >
+                    {{ typeText }}
+                  </span>
+                  <span 
+                    :class="statusBadgeClass"
+                    class="px-3 py-1 text-sm font-semibold rounded-full shadow-sm"
+                  >
+                    {{ statusText }}
+                  </span>
+                </div>
+              </div>
             </div>
+            
+            <button
+              @click="$emit('close')"
+              class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-all duration-200 transform hover:scale-105"
+            >
+              <i class="fas fa-times text-xl"></i>
+            </button>
           </div>
-          <button
-            @click="$emit('close')"
-            class="p-2 text-gray-400 hover:text-gray-600 hover:bg-white hover:bg-opacity-80 rounded-full transition-all duration-200 transform hover:scale-105"
-          >
-            <i class="fas fa-times w-6 h-6"></i>
-          </button>
         </div>
       </div>
 
@@ -34,129 +47,190 @@
       <div class="px-8 py-6 max-h-[calc(95vh-200px)] overflow-y-auto">
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <!-- Images Section -->
-          <ImageGallery 
-            :images="announcement.images"
-            :alt="announcement.title"
-            no-images-text="No images available"
-            @image-change="currentImageIndex = $event"
-          />
+          <div>
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Photos</h3>
+            <div v-if="props.announcement?.images && props.announcement.images.length > 0" class="space-y-4">
+              <!-- Main Image Display -->
+              <div class="relative">
+                <img
+                  :src="getImageUrl(props.announcement.images[currentImageIndex])"
+                  :alt="`Pet photo ${currentImageIndex + 1}`"
+                  class="w-full h-64 md:h-96 object-cover rounded-lg shadow-lg cursor-pointer"
+                  @click="openFullscreen(getImageUrl(props.announcement.images[currentImageIndex]))"
+                />
+                
+                <!-- Navigation arrows -->
+                <div v-if="props.announcement.images.length > 1" class="absolute inset-0 flex items-center justify-between p-4">
+                  <button
+                    @click="previousImage"
+                    class="bg-black bg-opacity-50 text-white rounded-full p-2 hover:bg-opacity-75 transition-all duration-200"
+                    :disabled="currentImageIndex === 0"
+                    :class="{ 'opacity-50 cursor-not-allowed': currentImageIndex === 0 }"
+                  >
+                    <i class="fas fa-chevron-left"></i>
+                  </button>
+                  
+                  <button
+                    @click="nextImage"
+                    class="bg-black bg-opacity-50 text-white rounded-full p-2 hover:bg-opacity-75 transition-all duration-200"
+                    :disabled="currentImageIndex === props.announcement.images.length - 1"
+                    :class="{ 'opacity-50 cursor-not-allowed': currentImageIndex === props.announcement.images.length - 1 }"
+                  >
+                    <i class="fas fa-chevron-right"></i>
+                  </button>
+                </div>
+
+                <!-- Image Counter -->
+                <div v-if="props.announcement.images.length > 1" class="absolute bottom-4 right-4 bg-black bg-opacity-50 text-white px-3 py-1 rounded-full text-sm">
+                  {{ currentImageIndex + 1 }} / {{ props.announcement.images.length }}
+                </div>
+              </div>
+
+              <!-- Thumbnail Strip -->
+              <div v-if="props.announcement.images.length > 1" class="flex space-x-2 overflow-x-auto pb-2">
+                <button
+                  v-for="(image, index) in props.announcement.images"
+                  :key="index"
+                  @click="currentImageIndex = index"
+                  :class="[
+                    'flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all duration-200',
+                    currentImageIndex === index
+                      ? 'border-blue-500 opacity-100'
+                      : 'border-gray-300 opacity-70 hover:opacity-100'
+                  ]"
+                >
+                  <img
+                    :src="getImageUrl(image)"
+                    :alt="`Thumbnail ${index + 1}`"
+                    class="w-full h-full object-cover"
+                  />
+                </button>
+              </div>
+            </div>
+
+            <!-- No Images State -->
+            <div v-else class="text-center py-12 bg-gray-50 rounded-lg">
+              <div class="text-gray-400 mb-4">
+                <i class="fas fa-images text-4xl"></i>
+              </div>
+              <p class="text-gray-500">No photos available for this pet</p>
+            </div>
+          </div>
 
           <!-- Details Section with cards -->
           <div class="space-y-6">
-            <!-- Basic Info Card -->
-            <DetailCard title="Pet Details" color="blue">
-              <template #icon>
-                <i class="fas fa-info-circle"></i>
-              </template>
+            <!-- Basic Info Card - Simplified -->
+            <div class="bg-white border border-gray-200 rounded-lg p-6">
+              <h3 class="text-lg font-semibold text-gray-900 mb-4">Pet Details</h3>
               <div class="grid grid-cols-2 gap-4">
-                <InfoField 
-                  label="Type" 
-                  :value="announcement.petType" 
-                  capitalize 
-                />
-                <InfoField 
-                  label="Breed" 
-                  :value="announcement.petDetails?.breed" 
-                />
-                <InfoField 
-                  label="Age" 
-                  :value="announcement.petDetails?.age" 
-                />
-                <InfoField 
-                  label="Color" 
-                  :value="announcement.petDetails?.color" 
-                />
+                <div>
+                  <span class="text-sm font-medium text-gray-500">Pet Type:</span>
+                  <span class="ml-2 text-gray-900">{{ props.announcement?.petType || 'Not specified' }}</span>
+                </div>
+                <div>
+                  <span class="text-sm font-medium text-gray-500">Name:</span>
+                  <span class="ml-2 text-gray-900">{{ props.announcement?.petName || 'Unknown' }}</span>
+                </div>
+                <div>
+                  <span class="text-sm font-medium text-gray-500">Breed:</span>
+                  <span class="ml-2 text-gray-900">{{ props.announcement?.breed || 'Not specified' }}</span>
+                </div>
+                <div>
+                  <span class="text-sm font-medium text-gray-500">Color:</span>
+                  <span class="ml-2 text-gray-900">{{ props.announcement?.color || 'Not specified' }}</span>
+                </div>
+                <div>
+                  <span class="text-sm font-medium text-gray-500">Age:</span>
+                  <span class="ml-2 text-gray-900">{{ props.announcement?.age || 'Not specified' }}</span>
+                </div>
+                <div>
+                  <span class="text-sm font-medium text-gray-500">Status:</span>
+                  <span class="ml-2 text-gray-900">{{ props.announcement?.status || 'Unknown' }}</span>
+                </div>
               </div>
-            </DetailCard>
+            </div>
 
-            <!-- Description Card -->
-            <DetailCard title="Description" color="green">
-              <template #icon>
-                <i class="fas fa-file-text"></i>
-              </template>
-              <p class="text-gray-700 leading-relaxed whitespace-pre-wrap">{{ announcement.description }}</p>
-            </DetailCard>
+            <!-- Description Card - Simplified -->
+            <div class="bg-white border border-gray-200 rounded-lg p-6">
+              <h3 class="text-lg font-semibold text-gray-900 mb-4">Description</h3>
+              <p class="text-gray-700 leading-relaxed">{{ props.announcement?.description || 'No description provided.' }}</p>
+            </div>
 
-            <!-- Location Card -->
-            <DetailCard title="Location" color="red">
-              <template #icon>
-                <i class="fas fa-map-marker-alt"></i>
-              </template>
+            <!-- Location Card - Simplified -->
+            <div class="bg-white border border-gray-200 rounded-lg p-6">
+              <h3 class="text-lg font-semibold text-gray-900 mb-4">Location</h3>
               <div class="space-y-3">
                 <p class="font-semibold text-gray-900 text-lg">{{ locationText }}</p>
                 
-                <!-- Detailed location information if available -->
-                <div v-if="announcement.locationDetails" class="space-y-2">
-                  <div v-if="announcement.locationDetails.address" class="flex items-start">
+                <!-- Detailed location information -->
+                <div class="space-y-2">
+                  <div v-if="props.announcement?.locationDetails?.address" class="flex items-start">
                     <span class="text-sm font-medium text-gray-500 w-20 flex-shrink-0">Address:</span>
-                    <span class="text-sm text-gray-700">{{ announcement.locationDetails.address }}</span>
+                    <span class="text-sm text-gray-700">{{ props.announcement.locationDetails.address }}</span>
                   </div>
                   <div class="flex gap-6">
-                    <div v-if="announcement.locationDetails.city" class="flex items-start">
+                    <div v-if="props.announcement?.locationDetails?.city" class="flex items-start">
                       <span class="text-sm font-medium text-gray-500 w-12 flex-shrink-0">City:</span>
-                      <span class="text-sm text-gray-700">{{ announcement.locationDetails.city }}</span>
+                      <span class="text-sm text-gray-700">{{ props.announcement.locationDetails.city }}</span>
                     </div>
-                    <div v-if="announcement.locationDetails.state" class="flex items-start">
+                    <div v-if="props.announcement?.locationDetails?.state" class="flex items-start">
                       <span class="text-sm font-medium text-gray-500 w-12 flex-shrink-0">State:</span>
-                      <span class="text-sm text-gray-700">{{ announcement.locationDetails.state }}</span>
+                      <span class="text-sm text-gray-700">{{ props.announcement.locationDetails.state }}</span>
                     </div>
                   </div>
-                </div>
-                
-                <!-- Fallback for backward compatibility -->
-                <div v-else-if="announcement.location?.address">
-                  <span class="text-sm text-gray-600">{{ announcement.location.address }}</span>
+                  <!-- Show coordinates if available -->
+                  <div v-if="props.announcement?.location?.coordinates" class="flex items-start">
+                    <span class="text-sm font-medium text-gray-500 w-20 flex-shrink-0">Coordinates:</span>
+                    <span class="text-sm text-gray-600">{{ formatCoordinates(props.announcement.location.coordinates) }}</span>
+                  </div>
                 </div>
               </div>
-            </DetailCard>
+            </div>
 
-            <!-- Contact Info Card (if available) -->
-            <DetailCard 
-              v-if="showContactInfo && hasContactInfo" 
-              title="Contact Information" 
-              color="purple"
-            >
-              <template #icon>
-                <i class="fas fa-phone"></i>
-              </template>
+            <!-- Contact Info Card - Simplified -->
+            <div v-if="hasContactInfo" class="bg-white border border-gray-200 rounded-lg p-6">
+              <h3 class="text-lg font-semibold text-gray-900 mb-4">Contact Information</h3>
               <div class="space-y-3">
-                <ContactLink
-                  v-if="announcement.contactInfo?.phone"
-                  type="phone"
-                  :value="announcement.contactInfo.phone"
-                />
-                <ContactLink
-                  v-if="announcement.contactInfo?.email"
-                  type="email"
-                  :value="announcement.contactInfo.email"
-                />
+                <div v-if="props.announcement?.contactInfo?.phone" class="flex items-center">
+                  <i class="fas fa-phone mr-3 text-blue-600"></i>
+                  <a :href="`tel:${props.announcement.contactInfo.phone}`" class="text-blue-600 hover:underline">
+                    {{ props.announcement.contactInfo.phone }}
+                  </a>
+                </div>
+                <div v-if="props.announcement?.contactInfo?.email" class="flex items-center">
+                  <i class="fas fa-envelope mr-3 text-blue-600"></i>
+                  <a :href="`mailto:${props.announcement.contactInfo.email}`" class="text-blue-600 hover:underline">
+                    {{ props.announcement.contactInfo.email }}
+                  </a>
+                </div>
+                <div v-if="props.announcement?.contactInfo?.preferredContact" class="text-sm text-gray-600">
+                  <span class="font-medium">Preferred contact:</span> {{ props.announcement.contactInfo.preferredContact }}
+                </div>
               </div>
-            </DetailCard>
+            </div>
 
-            <!-- Meta Information Card -->
-            <DetailCard title="Additional Information" color="yellow">
-              <template #icon>
-                <i class="fas fa-clock"></i>
-              </template>
+            <!-- Meta Information Card - Simplified -->
+            <div class="bg-white border border-gray-200 rounded-lg p-6">
+              <h3 class="text-lg font-semibold text-gray-900 mb-4">Additional Information</h3>
               <div class="grid grid-cols-1 gap-4">
                 <div class="flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0">
                   <span class="text-gray-600 font-medium">Posted</span>
                   <span class="text-gray-900 font-semibold">{{ formattedDate }}</span>
                 </div>
-                <div v-if="announcement.lastSeenDate" class="flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0">
+                <div v-if="props.announcement?.lastSeenDate" class="flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0">
                   <span class="text-gray-600 font-medium">{{ lastSeenText }}</span>
                   <span class="text-gray-900 font-semibold">{{ formattedLastSeenDate }}</span>
                 </div>
-                <div v-if="announcement.views" class="flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0">
+                <div v-if="props.announcement?.viewCount" class="flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0">
                   <span class="text-gray-600 font-medium">Views</span>
-                  <span class="text-gray-900 font-semibold">{{ announcement.views }}</span>
+                  <span class="text-gray-900 font-semibold">{{ props.announcement.viewCount }}</span>
                 </div>
-                <div v-if="announcement.resolvedAt" class="flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0">
+                <div v-if="props.announcement?.resolvedAt" class="flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0">
                   <span class="text-gray-600 font-medium">Resolved</span>
                   <span class="text-gray-900 font-semibold">{{ formattedResolvedDate }}</span>
                 </div>
               </div>
-            </DetailCard>
+            </div>
           </div>
         </div>
 
@@ -174,10 +248,10 @@
             </ActionButton>
           </div>
           
-          <div v-if="announcement.isOwner" class="flex flex-wrap gap-2">
+          <div v-if="props.announcement?.isOwner" class="flex flex-wrap gap-2">
             <ActionButton 
-              v-if="announcement.status !== 'resolved'"
-              @click="$emit('edit', announcement)"
+              v-if="props.announcement?.status !== 'resolved'"
+              @click="$emit('edit', props.announcement)"
               variant="secondary"
               size="md"
               class="whitespace-nowrap"
@@ -187,8 +261,8 @@
             </ActionButton>
             
             <ActionButton 
-              v-if="announcement.status === 'active'"
-              @click="$emit('resolve', announcement)"
+              v-if="props.announcement?.status === 'active'"
+              @click="$emit('resolve', props.announcement)"
               variant="success"
               size="md"
               class="whitespace-nowrap"
@@ -211,6 +285,27 @@
         </div>
       </div>
     </div>
+
+    <!-- Fullscreen Image Modal -->
+    <div
+      v-if="fullscreenImage"
+      class="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-60 p-4"
+      @click="closeFullscreen"
+    >
+      <div class="relative max-w-full max-h-full">
+        <img 
+          :src="fullscreenImage" 
+          alt="Full size image" 
+          class="max-w-full max-h-full object-contain rounded-lg"
+        />
+        <button
+          @click="closeFullscreen"
+          class="absolute top-4 right-4 bg-black bg-opacity-50 text-white rounded-full p-2 hover:bg-opacity-75 transition-all duration-200"
+        >
+          <i class="fas fa-times text-xl"></i>
+        </button>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -231,11 +326,43 @@ const props = defineProps({
 
 const emit = defineEmits(['close', 'edit', 'resolve', 'delete'])
 
+// Debug - să vedem ce primim
+console.log('AnnouncementDetailModal - received announcement:', props.announcement)
+
 // State
 const currentImageIndex = ref(0)
 const deleting = ref(false)
+const fullscreenImage = ref(null)
+
+// Image navigation methods
+const previousImage = () => {
+  if (currentImageIndex.value > 0) {
+    currentImageIndex.value--
+  }
+}
+
+const nextImage = () => {
+  if (props.announcement?.images && currentImageIndex.value < props.announcement.images.length - 1) {
+    currentImageIndex.value++
+  }
+}
+
+const openFullscreen = (imageSrc) => {
+  fullscreenImage.value = imageSrc
+}
+
+const closeFullscreen = () => {
+  fullscreenImage.value = null
+}
 
 // Computed
+const announcementTitle = computed(() => {
+  const petName = props.announcement.petName || 'Pet'
+  const type = props.announcement.type || props.announcement.announcementType
+  const typeText = type === 'lost' ? 'Lost' : type === 'found' ? 'Found' : 'Pet'
+  return `${typeText}: ${petName}`
+})
+
 const statusBadgeClass = computed(() => {
   switch (props.announcement.status) {
     case 'active':
@@ -282,11 +409,39 @@ const headerClass = computed(() => {
   return 'bg-gray-50 border-b border-gray-100'
 })
 
+const iconBadgeClasses = computed(() => {
+  const type = props.announcement.type || props.announcement.announcementType
+  switch (type) {
+    case 'lost':
+      return {
+        icon: 'text-red-600',
+        badge: 'bg-red-100 text-red-800 border border-red-200'
+      }
+    case 'found':
+      return {
+        icon: 'text-amber-600',
+        badge: 'bg-amber-100 text-amber-800 border border-amber-200'
+      }
+    case 'adoption':
+      return {
+        icon: 'text-purple-600',
+        badge: 'bg-purple-100 text-purple-800 border border-purple-200'
+      }
+    default:
+      return {
+        icon: 'text-gray-600',
+        badge: 'bg-gray-100 text-gray-800 border border-gray-200'
+      }
+  }
+})
+
 const locationText = computed(() => {
+  // Use locationName if available (most complete address)
   if (props.announcement.locationName) {
     return props.announcement.locationName
   }
   
+  // Build from locationDetails
   if (props.announcement.locationDetails) {
     const parts = []
     
@@ -307,28 +462,37 @@ const locationText = computed(() => {
     }
   }
   
-  if (props.announcement.location) {
-    const parts = []
-    
-    if (props.announcement.location.address) {
-      parts.push(props.announcement.location.address)
-    }
-    
-    if (props.announcement.location.city) {
-      parts.push(props.announcement.location.city)
-    }
-    
-    if (props.announcement.location.state) {
-      parts.push(props.announcement.location.state)
-    }
-    
-    if (parts.length > 0) {
-      return parts.join(', ')
-    }
+  // Fallback to coordinates if no address available
+  if (props.announcement.location?.coordinates) {
+    const coords = props.announcement.location.coordinates
+    return `Coordinates: ${coords[1].toFixed(4)}, ${coords[0].toFixed(4)}`
   }
   
   return 'Location not specified'
 })
+
+// Methods
+const getImageUrl = (image) => {
+  if (!image) return null
+  
+  // If image is a string (direct URL), return it
+  if (typeof image === 'string') {
+    return image
+  }
+  
+  // If image is an object with url property
+  if (typeof image === 'object' && image.url) {
+    return image.url
+  }
+  
+  return null
+}
+
+const formatCoordinates = (coordinates) => {
+  if (!coordinates || coordinates.length < 2) return ''
+  // coordinates are [longitude, latitude] in GeoJSON format
+  return `${coordinates[1].toFixed(6)}, ${coordinates[0].toFixed(6)} (lat, lng)`
+}
 
 const formattedDate = computed(() => {
   if (props.announcement.createdAt) {
@@ -370,12 +534,6 @@ const formattedLastSeenDate = computed(() => {
     })
   }
   return ''
-})
-
-const showContactInfo = computed(() => {
-  return props.announcement.isOwner || 
-         props.announcement.status === 'resolved' ||
-         (props.announcement.type || props.announcement.announcementType) === 'found'
 })
 
 const hasContactInfo = computed(() => {

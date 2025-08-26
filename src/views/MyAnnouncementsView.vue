@@ -10,12 +10,11 @@
           <p class="text-gray-600">Manage your pet announcements and track their status</p>
         </div>
         <ActionButton 
-          @click="showCreateModal = true"
+          @click="handleCreateClick"
           variant="primary"
-          icon="add"
-          class="mt-4 sm:mt-0"
+          class="mt-4 sm:mt-0 text-center justify-center"
         >
-          Create New Announcement
+          Create Announcement
         </ActionButton>
       </div>
 
@@ -106,6 +105,7 @@
     <!-- Create/Edit Modal -->
     <AnnouncementFormModal
       v-if="showCreateModal || editingAnnouncement"
+      :is-open="showCreateModal || !!editingAnnouncement"
       :announcement="editingAnnouncement"
       @close="handleCloseModal"
       @success="handleAnnouncementSaved"
@@ -142,7 +142,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, computed } from 'vue'
+import { ref, reactive, onMounted, onUnmounted, computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useToastStore } from '@/stores/toast'
 import { announcementApi } from '@/api/announcements'
@@ -169,6 +169,9 @@ const pagination = reactive({
   limit: 50, // Increased limit since pagination is removed
   total: 0
 })
+
+// Request management
+let currentRequest = null
 
 const filters = reactive({
   type: '',
@@ -214,6 +217,15 @@ const updateFilters = (newFilters) => {
 
 const loadAnnouncements = async () => {
   try {
+    // Cancel previous request if still pending
+    if (currentRequest) {
+      currentRequest.abort()
+    }
+
+    // Create new abort controller for this request
+    const abortController = new AbortController()
+    currentRequest = abortController
+
     loading.value = true
     
     const params = {
@@ -233,50 +245,57 @@ const loadAnnouncements = async () => {
       }
     })
 
+    const response = await announcementApi.getUserAnnouncements(params, abortController.signal)
     
-    const response = await announcementApi.getUserAnnouncements(params)
-    
-    
-    if (response.data.announcements && response.data.announcements.length > 0) {
+    // Only update if this request wasn't aborted
+    if (!abortController.signal.aborted) {
+      if (response.data.announcements && response.data.announcements.length > 0) {
+        // Check for all possible ID fields
+        const firstAnnouncement = response.data.announcements[0];
+      }
       
-      // Check for all possible ID fields
-      const firstAnnouncement = response.data.announcements[0];
+      announcements.value = response.data.announcements || []
+      
+      // TEMPORARY FIX: Map announcements to include proper ID based on known data
+      announcements.value = announcements.value.map((announcement, index) => {
+        // If announcement doesn't have announcementId, generate one based on user ID and index
+        if (!announcement.announcementId && !announcement.id && !announcement._id) {
+          // Create a deterministic ID based on announcement data
+          const tempId = `temp-${announcement.userId}-${announcement.petName.replace(/\s+/g, '-').toLowerCase()}-${index}`;
+          return { ...announcement, announcementId: tempId };
+        }
+        
+        // If has other ID fields, use them as announcementId  
+        if (!announcement.announcementId) {
+          const id = announcement.id || announcement._id || announcement.objectId || announcement.uuid;
+          if (id) {
+            return { ...announcement, announcementId: id };
+          }
+        }
+        
+        return announcement;
+      });
+      
+      pagination.total = response.data.pagination?.total || 0
+      pagination.page = response.data.pagination?.page || 1
     }
     
-    announcements.value = response.data.announcements || []
-    
-    // TEMPORARY FIX: Map announcements to include proper ID based on known data
-    announcements.value = announcements.value.map((announcement, index) => {
-      // If announcement doesn't have announcementId, generate one based on user ID and index
-      if (!announcement.announcementId && !announcement.id && !announcement._id) {
-        // Create a deterministic ID based on announcement data
-        const tempId = `temp-${announcement.userId}-${announcement.petName.replace(/\s+/g, '-').toLowerCase()}-${index}`;
-        return { ...announcement, announcementId: tempId };
-      }
-      
-      // If has other ID fields, use them as announcementId  
-      if (!announcement.announcementId) {
-        const id = announcement.id || announcement._id || announcement.objectId || announcement.uuid;
-        if (id) {
-          return { ...announcement, announcementId: id };
-        }
-      }
-      
-      return announcement;
-    });
-    
-    pagination.total = response.data.pagination?.total || 0
-    pagination.page = response.data.pagination?.page || 1
-    
-    
   } catch (error) {
+    if (error.name === 'AbortError') {
+      console.log('Request was aborted')
+      return
+    }
     console.error('Error loading user announcements:', error)
     toastStore.error({
       title: 'Error',
       message: 'Failed to load your announcements. Please try again.'
     })
   } finally {
-    loading.value = false
+    // Only set loading to false if this request wasn't aborted
+    if (currentRequest && !currentRequest.signal.aborted) {
+      loading.value = false
+      currentRequest = null
+    }
   }
 }
 
@@ -381,6 +400,14 @@ const handleCloseModal = () => {
   editingAnnouncement.value = null
 }
 
+const handleCreateClick = () => {
+  console.log('Create button clicked!')
+  console.log('showCreateModal before:', showCreateModal.value)
+  console.log('editingAnnouncement before:', editingAnnouncement.value)
+  showCreateModal.value = true
+  console.log('showCreateModal after:', showCreateModal.value)
+}
+
 const handleAnnouncementSaved = () => {
   handleCloseModal()
   loadAnnouncements()
@@ -405,6 +432,14 @@ const handleAnnouncementResolved = () => {
 onMounted(() => {
   if (authStore.isAuthenticated) {
     loadAnnouncements()
+  }
+})
+
+onUnmounted(() => {
+  // Cancel any pending request when component is unmounted
+  if (currentRequest) {
+    currentRequest.abort()
+    currentRequest = null
   }
 })
 </script>

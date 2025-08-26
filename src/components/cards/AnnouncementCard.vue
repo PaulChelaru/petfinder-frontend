@@ -9,21 +9,18 @@
       <div class="flex items-center justify-between">
         <div class="flex items-center space-x-3">
           <!-- Icon Badge -->
-          <div :class="iconBadgeClasses" class="p-2 rounded-full flex items-center justify-center">
-            <i v-if="announcement.status === 'resolved'" class="fas fa-check-circle text-white text-lg"></i>
-            <i v-else-if="announcement.type === 'lost'" class="fas fa-search text-white text-lg"></i>
-            <i v-else-if="announcement.type === 'found'" class="fas fa-heart text-white text-lg"></i>
-            <i v-else class="fas fa-paw text-white text-lg"></i>
+          <div :class="iconBadgeClasses" class="p-3 rounded-full flex items-center justify-center">
+            <i v-if="announcement.status === 'resolved'" class="fas fa-check-circle text-white text-xl"></i>
+            <i v-else-if="announcement.type === 'lost'" class="fas fa-search text-white text-xl"></i>
+            <i v-else-if="announcement.type === 'found'" class="fas fa-heart text-white text-xl"></i>
+            <i v-else class="fas fa-paw text-white text-xl"></i>
           </div>
           
           <!-- Type Text -->
           <div>
-            <span class="font-bold text-white text-sm uppercase tracking-wide">
+            <span class="font-bold text-black text-2xl uppercase tracking-wide drop-shadow-lg">
               {{ typeDisplayText }}
             </span>
-            <div v-if="announcement.petType" class="text-white/80 text-xs">
-              {{ formatPetType(announcement.petType) }}
-            </div>
           </div>
         </div>
         
@@ -40,13 +37,20 @@
     <div class="space-y-4">
       <!-- Image Section -->
       <div class="relative h-48 bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg overflow-hidden">
+        <!-- Pet Type Badge - Positioned over image -->
+        <div v-if="announcement.petType" class="absolute top-3 right-3 z-10">
+          <span :class="petTypeBadgeClasses" class="px-4 py-2 rounded-full text-sm font-bold uppercase tracking-wide shadow-lg backdrop-blur-sm">
+            {{ formatPetTypeForBadge(announcement.petType) }}
+          </span>
+        </div>
+        
         <!-- Color overlay based on type -->
         <div v-if="announcement.type === 'lost'" class="absolute inset-0 bg-gradient-to-br from-red-100/60 to-orange-100/60"></div>
         <div v-else-if="announcement.type === 'found'" class="absolute inset-0 bg-gradient-to-br from-green-100/60 to-blue-100/60"></div>
         
         <img 
           v-if="announcement.images && announcement.images.length > 0"
-          :src="announcement.images[0]" 
+          :src="getImageUrl(announcement.images[0])" 
           :alt="announcement.title || 'Pet image'"
           class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
         />
@@ -75,14 +79,6 @@
           <span class="truncate">{{ locationText }}</span>
         </div>
         
-        <!-- Last Seen Date for Lost Pets -->
-        <div v-if="announcement.type === 'lost' && announcement.lastSeenDate" class="flex items-center text-sm text-gray-600">
-          <div class="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center mr-3 flex-shrink-0">
-            <i class="fas fa-clock text-red-600 text-sm"></i>
-          </div>
-          <span>Last seen: {{ formatDate(announcement.lastSeenDate) }}</span>
-        </div>
-
         <!-- Date Posted -->
         <div class="flex items-center text-sm text-gray-600">
           <div class="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center mr-3 flex-shrink-0">
@@ -157,18 +153,18 @@ const cardVariant = computed(() => {
 })
 
 const iconBadgeClasses = computed(() => {
-  const baseClasses = 'shadow-md'
+  const baseClasses = 'shadow-lg'
   
   if (props.announcement.status === 'resolved') {
-    return `${baseClasses} bg-green-600`
+    return `${baseClasses} bg-emerald-600`
   }
   if (props.announcement.type === 'lost') {
-    return `${baseClasses} bg-red-600`
+    return `${baseClasses} bg-rose-600`
   }
   if (props.announcement.type === 'found') {
-    return `${baseClasses} bg-yellow-600`
+    return `${baseClasses} bg-amber-600`
   }
-  return `${baseClasses} bg-blue-600`
+  return `${baseClasses} bg-indigo-600`
 })
 
 const statusBadgeClasses = computed(() => {
@@ -180,19 +176,33 @@ const statusBadgeClasses = computed(() => {
 
 const typeDisplayText = computed(() => {
   if (props.announcement.status === 'resolved') {
-    return 'Resolved'
+    return 'RESOLVED'
   }
   if (props.announcement.type === 'lost') {
-    return 'LOST'
+    return 'LOST PET'
   }
   if (props.announcement.type === 'found') {
-    return 'FOUND'
+    return 'FOUND PET'
   }
-  return props.announcement.type?.toUpperCase() || 'ANNOUNCEMENT'
+  return props.announcement.type?.toUpperCase() || 'PET ANNOUNCEMENT'
 })
 
 const showStatusBadge = computed(() => {
   return props.announcement.status === 'resolved'
+})
+
+const petTypeBadgeClasses = computed(() => {
+  const petType = props.announcement.petType?.toLowerCase()
+  
+  if (petType === 'dog') {
+    return 'bg-orange-600 text-white border border-orange-700'
+  }
+  if (petType === 'cat') {
+    return 'bg-purple-600 text-white border border-purple-700'
+  }
+  
+  // Default styling for other pet types
+  return 'bg-slate-600 text-white border border-slate-700'
 })
 
 const locationText = computed(() => {
@@ -248,6 +258,22 @@ const contactInfo = computed(() => {
 })
 
 // Utility functions
+const getImageUrl = (image) => {
+  if (!image) return null
+  
+  // If image is a string (direct URL), return it
+  if (typeof image === 'string') {
+    return image
+  }
+  
+  // If image is an object with url property
+  if (typeof image === 'object' && image.url) {
+    return image.url
+  }
+  
+  return null
+}
+
 const formatType = (type) => {
   if (!type) return 'Unknown'
   return type.charAt(0).toUpperCase() + type.slice(1)
@@ -255,7 +281,24 @@ const formatType = (type) => {
 
 const formatPetType = (petType) => {
   if (!petType) return 'Pet'
-  return petType.charAt(0).toUpperCase() + petType.slice(1)
+  
+  const petTypes = {
+    'dog': '🐕 Dog',
+    'cat': '🐱 Cat'
+  }
+  
+  return petTypes[petType.toLowerCase()] || petType.charAt(0).toUpperCase() + petType.slice(1)
+}
+
+const formatPetTypeForBadge = (petType) => {
+  if (!petType) return 'PET'
+  
+  const petTypes = {
+    'dog': '🐕 DOG',
+    'cat': '🐱 CAT'
+  }
+  
+  return petTypes[petType.toLowerCase()] || petType.toUpperCase()
 }
 
 const formatDate = (dateString) => {

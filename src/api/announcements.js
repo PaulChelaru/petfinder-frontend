@@ -9,7 +9,7 @@ export const announcementApi = {
   /**
    * List announcements with filters and pagination
    */
-  async list(params = {}) {
+  async list(params = {}, signal = null) {
     const queryParams = new URLSearchParams();
     
     // Add pagination params
@@ -34,7 +34,8 @@ export const announcementApi = {
       ? `${ANNOUNCEMENT_BASE_URL}?${queryParams.toString()}`
       : ANNOUNCEMENT_BASE_URL;
       
-    return api.get(url);
+    const config = signal ? { signal } : {};
+    return api.get(url, config);
   },
 
   /**
@@ -47,7 +48,7 @@ export const announcementApi = {
   /**
    * Get user's own announcements
    */
-  async getUserAnnouncements(params = {}) {
+  async getUserAnnouncements(params = {}, signal = null) {
     const queryParams = new URLSearchParams();
     
     // Add pagination params
@@ -71,8 +72,9 @@ export const announcementApi = {
     const url = queryParams.toString() 
       ? `/my-announcements?${queryParams.toString()}`
       : `/my-announcements`;
-      
-    return api.get(url);
+
+    const config = signal ? { signal } : {};
+    return api.get(url, config);
   },
 
   /**

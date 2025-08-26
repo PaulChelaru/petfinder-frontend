@@ -13,7 +13,7 @@
     @click="$emit('click', $event)"
   >
     <div class="flex items-center justify-center gap-2 whitespace-nowrap">
-      <LoadingSpinner v-if="loading" :size="iconSize" />
+      <LoadingSpinner v-if="loading" :size="size" />
       <component v-else-if="icon" :is="icon" :class="iconClasses" />
       <span v-if="$slots.default" class="whitespace-nowrap"><slot /></span>
     </div>

@@ -4,7 +4,7 @@
       <!-- Header -->
       <div class="flex items-center justify-between p-6 border-b border-gray-200">
         <div>
-          <h2 class="text-xl font-semibold text-gray-900">{{ announcement?.title || 'Announcement Details' }}</h2>
+          <h2 class="text-xl font-semibold text-gray-900">{{ announcement?.petName || 'Pet Details' }}</h2>
           <div class="flex items-center space-x-2 mt-1">
             <span :class="typeClasses" class="px-2 py-1 rounded-full text-xs font-medium">
               {{ formatType(announcement?.type) }}
@@ -12,7 +12,7 @@
             <span class="px-2 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">
               {{ formatPetType(announcement?.petType) }}
             </span>
-            <span v-if="announcement?.resolved" class="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
+            <span v-if="announcement?.status === 'resolved'" class="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
               Resolved
             </span>
           </div>
@@ -45,6 +45,41 @@
 
           <!-- Details -->
           <div class="space-y-6">
+            <!-- Pet Details -->
+            <div v-if="announcement?.breed || announcement?.color || announcement?.age || announcement?.size">
+              <h3 class="text-lg font-semibold text-gray-900 mb-3">Pet Details</h3>
+              <div class="grid grid-cols-2 gap-4">
+                <div v-if="announcement?.breed" class="flex items-center text-gray-700">
+                  <i class="fas fa-paw mr-2 text-blue-600"></i>
+                  <div>
+                    <div class="text-xs text-gray-500">Breed</div>
+                    <div class="font-medium">{{ announcement.breed }}</div>
+                  </div>
+                </div>
+                <div v-if="announcement?.color" class="flex items-center text-gray-700">
+                  <i class="fas fa-palette mr-2 text-blue-600"></i>
+                  <div>
+                    <div class="text-xs text-gray-500">Color</div>
+                    <div class="font-medium">{{ announcement.color }}</div>
+                  </div>
+                </div>
+                <div v-if="announcement?.age" class="flex items-center text-gray-700">
+                  <i class="fas fa-birthday-cake mr-2 text-blue-600"></i>
+                  <div>
+                    <div class="text-xs text-gray-500">Age</div>
+                    <div class="font-medium">{{ announcement.age }}</div>
+                  </div>
+                </div>
+                <div v-if="announcement?.size" class="flex items-center text-gray-700">
+                  <i class="fas fa-ruler-vertical mr-2 text-blue-600"></i>
+                  <div>
+                    <div class="text-xs text-gray-500">Size</div>
+                    <div class="font-medium">{{ announcement.size }}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <!-- Description -->
             <div>
               <h3 class="text-lg font-semibold text-gray-900 mb-2">Description</h3>
@@ -56,7 +91,7 @@
               <h3 class="text-lg font-semibold text-gray-900 mb-2">Location</h3>
               <div class="flex items-center text-gray-700">
                 <i class="fas fa-map-marker-alt mr-2 text-blue-600"></i>
-                {{ announcement?.location || 'Location not specified' }}
+                {{ announcement?.locationName || announcement?.locationDetails?.address || 'Location not specified' }}
               </div>
             </div>
 
@@ -73,18 +108,31 @@
             <div>
               <h3 class="text-lg font-semibold text-gray-900 mb-2">Contact Information</h3>
               <div class="space-y-2">
-                <div class="flex items-center text-gray-700">
+                <div v-if="announcement?.contactInfo?.name" class="flex items-center text-gray-700">
                   <i class="fas fa-user mr-2 text-blue-600"></i>
-                  {{ announcement?.contactName || 'Name not provided' }}
+                  {{ announcement.contactInfo.name }}
                 </div>
-                <div class="flex items-center text-gray-700">
+                <div v-if="announcement?.contactInfo?.phone" class="flex items-center text-gray-700">
                   <i class="fas fa-phone mr-2 text-blue-600"></i>
                   <a
-                    :href="`tel:${announcement?.contactPhone}`"
+                    :href="`tel:${announcement.contactInfo.phone}`"
                     class="text-blue-600 hover:text-blue-500 transition-colors"
                   >
-                    {{ announcement?.contactPhone || 'Phone not provided' }}
+                    {{ announcement.contactInfo.phone }}
                   </a>
+                </div>
+                <div v-if="announcement?.contactInfo?.email" class="flex items-center text-gray-700">
+                  <i class="fas fa-envelope mr-2 text-blue-600"></i>
+                  <a
+                    :href="`mailto:${announcement.contactInfo.email}`"
+                    class="text-blue-600 hover:text-blue-500 transition-colors"
+                  >
+                    {{ announcement.contactInfo.email }}
+                  </a>
+                </div>
+                <div v-if="announcement?.contactInfo?.preferredContact" class="flex items-center text-gray-700">
+                  <i class="fas fa-star mr-2 text-blue-600"></i>
+                  <span class="text-sm">Preferred: {{ formatPreferredContact(announcement.contactInfo.preferredContact) }}</span>
                 </div>
               </div>
             </div>
@@ -109,14 +157,25 @@
         <!-- Actions -->
         <div class="flex flex-col sm:flex-row justify-center space-y-2 sm:space-y-0 sm:space-x-4 mt-8 pt-6 border-t border-gray-200">
           <BaseButton
-            v-if="announcement?.contactPhone"
+            v-if="announcement?.contactInfo?.phone"
             variant="primary"
             size="lg"
-            :href="`tel:${announcement.contactPhone}`"
+            :href="`tel:${announcement.contactInfo.phone}`"
             class="w-full sm:w-auto"
           >
             <i class="fas fa-phone mr-2"></i>
-            Call {{ announcement.contactName }}
+            Call {{ announcement?.contactInfo?.name || 'Owner' }}
+          </BaseButton>
+
+          <BaseButton
+            v-if="announcement?.contactInfo?.email"
+            variant="secondary"
+            size="lg"
+            :href="`mailto:${announcement.contactInfo.email}`"
+            class="w-full sm:w-auto"
+          >
+            <i class="fas fa-envelope mr-2"></i>
+            Send Email
           </BaseButton>
           
           <BaseButton
@@ -205,6 +264,15 @@ const formatDate = (dateString) => {
     month: 'long',
     day: 'numeric'
   })
+}
+
+const formatPreferredContact = (preferredContact) => {
+  const options = {
+    'phone': 'Phone',
+    'email': 'Email', 
+    'both': 'Phone or Email'
+  }
+  return options[preferredContact] || preferredContact
 }
 
 const shareAnnouncement = () => {

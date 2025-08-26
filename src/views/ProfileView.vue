@@ -73,15 +73,16 @@
               <div v-if="!isEditMode" class="px-3 py-2 text-gray-900 min-h-[2.5rem] flex items-center bg-gray-50 rounded-md border border-gray-200">
                 {{ user?.firstName || 'Not provided' }}
               </div>
-              <BaseInput
+              <input
                 v-else
                 id="firstName"
                 v-model="form.firstName"
                 type="text"
                 required
-                :error="errors.firstName"
-                class="transition-all duration-200"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                :class="{ 'border-red-500': errors.firstName }"
               />
+              <p v-if="errors.firstName" class="mt-1 text-sm text-red-600">{{ errors.firstName }}</p>
             </div>
 
             <!-- Last Name -->
@@ -92,15 +93,16 @@
               <div v-if="!isEditMode" class="px-3 py-2 text-gray-900 min-h-[2.5rem] flex items-center bg-gray-50 rounded-md border border-gray-200">
                 {{ user?.lastName || 'Not provided' }}
               </div>
-              <BaseInput
+              <input
                 v-else
                 id="lastName"
                 v-model="form.lastName"
                 type="text"
                 required
-                :error="errors.lastName"
-                class="transition-all duration-200"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                :class="{ 'border-red-500': errors.lastName }"
               />
+              <p v-if="errors.lastName" class="mt-1 text-sm text-red-600">{{ errors.lastName }}</p>
             </div>
 
             <!-- Username -->
@@ -111,15 +113,16 @@
               <div v-if="!isEditMode" class="px-3 py-2 text-gray-900 min-h-[2.5rem] flex items-center bg-gray-50 rounded-md border border-gray-200">
                 {{ user?.username || 'Not provided' }}
               </div>
-              <BaseInput
+              <input
                 v-else
                 id="username"
                 v-model="form.username"
                 type="text"
                 required
-                :error="errors.username"
-                class="transition-all duration-200"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                :class="{ 'border-red-500': errors.username }"
               />
+              <p v-if="errors.username" class="mt-1 text-sm text-red-600">{{ errors.username }}</p>
             </div>
 
             <!-- Email -->
@@ -130,15 +133,16 @@
               <div v-if="!isEditMode" class="px-3 py-2 text-gray-900 min-h-[2.5rem] flex items-center bg-gray-50 rounded-md border border-gray-200">
                 {{ user?.email || 'Not provided' }}
               </div>
-              <BaseInput
+              <input
                 v-else
                 id="email"
                 v-model="form.email"
                 type="email"
                 required
-                :error="errors.email"
-                class="transition-all duration-200"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                :class="{ 'border-red-500': errors.email }"
               />
+              <p v-if="errors.email" class="mt-1 text-sm text-red-600">{{ errors.email }}</p>
             </div>
 
             <!-- City -->
@@ -149,15 +153,16 @@
               <div v-if="!isEditMode" class="px-3 py-2 text-gray-900 min-h-[2.5rem] flex items-center bg-gray-50 rounded-md border border-gray-200">
                 {{ user?.city || 'Not provided' }}
               </div>
-              <BaseInput
+              <input
                 v-else
                 id="city"
                 v-model="form.city"
                 type="text"
                 required
-                :error="errors.city"
-                class="transition-all duration-200"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                :class="{ 'border-red-500': errors.city }"
               />
+              <p v-if="errors.city" class="mt-1 text-sm text-red-600">{{ errors.city }}</p>
             </div>
 
             <!-- Phone Number -->
@@ -169,55 +174,16 @@
                 {{ user?.phoneNumber || 'Not provided' }}
               </div>
               <div v-else>
-                <BaseInput
+                <input
                   id="phoneNumber"
                   v-model="form.phoneNumber"
                   type="tel"
                   placeholder="+1234567890"
-                  :error="errors.phoneNumber"
-                  class="transition-all duration-200"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                  :class="{ 'border-red-500': errors.phoneNumber }"
                 />
+                <p v-if="errors.phoneNumber" class="mt-1 text-sm text-red-600">{{ errors.phoneNumber }}</p>
                 <p class="text-xs text-gray-500 mt-1">Format: +[country code][number] (e.g., +1234567890)</p>
-              </div>
-            </div>
-          </div>
-
-          <!-- Notification Preferences -->
-          <div class="border-t pt-6">
-            <h3 class="text-lg font-medium text-gray-900 mb-4">Notification Preferences</h3>
-            <div class="space-y-4">
-              <!-- Email Notifications -->
-              <div class="flex items-center justify-between">
-                <label class="text-gray-700">Email notifications</label>
-                <div v-if="!isEditMode">
-                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" 
-                        :class="user?.notifyByEmail ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'">
-                    {{ user?.notifyByEmail ? 'Enabled' : 'Disabled' }}
-                  </span>
-                </div>
-                <input
-                  v-else
-                  v-model="form.notifyByEmail"
-                  type="checkbox"
-                  class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-                />
-              </div>
-
-              <!-- SMS Notifications -->
-              <div class="flex items-center justify-between">
-                <label class="text-gray-700">SMS notifications</label>
-                <div v-if="!isEditMode">
-                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" 
-                        :class="user?.notifyBySms ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'">
-                    {{ user?.notifyBySms ? 'Enabled' : 'Disabled' }}
-                  </span>
-                </div>
-                <input
-                  v-else
-                  v-model="form.notifyBySms"
-                  type="checkbox"
-                  class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-                />
               </div>
             </div>
           </div>
@@ -226,9 +192,9 @@
           <div v-if="!isEditMode" class="flex justify-center pt-6 border-t">
             <ActionButton
               variant="outline"
-              @click="$router.push('/dashboard')"
+              @click="$router.push('/announcements')"
             >
-              Back to Dashboard
+              View Announcements
             </ActionButton>
           </div>
         </div>
@@ -244,7 +210,6 @@ import { useToastStore } from '@/stores/toast'
 import { userAPI } from '@/api/user'
 import NavBar from '@/layouts/NavBar.vue'
 import BaseCard from '@/components/cards/BaseCard.vue'
-import FormField from '@/components/forms/FormField.vue'
 import ActionButton from '@/components/buttons/ActionButton.vue'
 
 const router = useRouter()
