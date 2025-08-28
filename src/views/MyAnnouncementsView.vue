@@ -131,11 +131,12 @@
     <!-- Confirmation Modal for Delete -->
     <ConfirmationModal
       v-if="deletingAnnouncement"
+      :is-visible="true"
       title="Delete Announcement"
       :message="`Are you sure you want to delete the announcement for ${deletingAnnouncement.petName || 'this pet'}?`"
       description="This action cannot be undone and will permanently remove the announcement."
       confirm-text="Delete"
-      :on-confirm="executeDelete"
+      @confirm="executeDelete"
       @cancel="deletingAnnouncement = null"
     />
   </div>
@@ -338,17 +339,19 @@ const handleResolveAnnouncement = (announcement) => {
 }
 
 const handleDeleteAnnouncement = (announcement) => {
+  console.log('🗑️ handleDeleteAnnouncement called with:', announcement);
   deletingAnnouncement.value = announcement
 }
 
 const executeDelete = async () => {
+  console.log('🚀 executeDelete called with:', deletingAnnouncement.value);
   
   if (!deletingAnnouncement.value) {
+    console.log('❌ No announcement to delete');
     return;
   }
   
   try {
-    
     // Get the ID - try all possible fields (announcementId first as that's what backend returns)
     const announcementId = deletingAnnouncement.value.announcementId || 
                           deletingAnnouncement.value.id || 
@@ -356,13 +359,18 @@ const executeDelete = async () => {
                           deletingAnnouncement.value.objectId ||
                           deletingAnnouncement.value.uuid;
                           
+    console.log('🔍 Found ID:', announcementId);
     
     if (!announcementId) {
       throw new Error('No valid ID found for announcement');
     }
     
+    console.log('🌐 Calling API delete with ID:', announcementId);
+    
     // Call the API
     const response = await announcementApi.delete(announcementId);
+    
+    console.log('✅ Delete API response:', response);
     
     // Success - show toast
     toastStore.success({
@@ -387,7 +395,8 @@ const executeDelete = async () => {
       message: 'Failed to delete announcement. Please try again.'
     });
     
-    throw error; // Re-throw to be handled by modal
+    // Don't re-throw error here, just keep modal open for retry
+    // throw error; // Re-throw to be handled by modal
   }
 }
 
