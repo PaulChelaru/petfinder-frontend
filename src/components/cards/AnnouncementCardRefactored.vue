@@ -38,7 +38,7 @@
       
       <img 
         v-if="announcement.images && announcement.images.length > 0"
-        :src="announcement.images[0]" 
+        :src="getImageUrl(announcement.images[0])" 
         :alt="announcement.petName"
         class="w-full h-full object-cover relative z-10"
         @error="imageError = true"
@@ -139,6 +139,7 @@ import ActionButton from '../buttons/ActionButton.vue'
 import ContactLink from '../ui/ContactLink.vue'
 import ClockIcon from '../icons/ClockIcon.vue'
 import LocationIcon from '../icons/LocationIcon.vue'
+import { getImageUrl } from '../../services/announcementService.js'
 
 const props = defineProps({
   announcement: {

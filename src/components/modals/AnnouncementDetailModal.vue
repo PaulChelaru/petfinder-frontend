@@ -316,6 +316,7 @@ import DetailCard from '../cards/DetailCard.vue'
 import InfoField from '../ui/InfoField.vue'
 import ImageGallery from '../ui/ImageGallery.vue'
 import ContactLink from '../ui/ContactLink.vue'
+import { getImageUrl } from '../../services/announcementService.js'
 
 const props = defineProps({
   announcement: {
@@ -472,22 +473,6 @@ const locationText = computed(() => {
 })
 
 // Methods
-const getImageUrl = (image) => {
-  if (!image) return null
-  
-  // If image is a string (direct URL), return it
-  if (typeof image === 'string') {
-    return image
-  }
-  
-  // If image is an object with url property
-  if (typeof image === 'object' && image.url) {
-    return image.url
-  }
-  
-  return null
-}
-
 const formatCoordinates = (coordinates) => {
   if (!coordinates || coordinates.length < 2) return ''
   // coordinates are [longitude, latitude] in GeoJSON format

@@ -44,15 +44,11 @@
           </span>
         </div>
         
-        <!-- Color overlay based on type -->
-        <div v-if="announcement.type === 'lost'" class="absolute inset-0 bg-gradient-to-br from-red-100/60 to-orange-100/60"></div>
-        <div v-else-if="announcement.type === 'found'" class="absolute inset-0 bg-gradient-to-br from-green-100/60 to-blue-100/60"></div>
-        
         <img 
           v-if="announcement.images && announcement.images.length > 0"
           :src="getImageUrl(announcement.images[0])" 
           :alt="announcement.title || 'Pet image'"
-          class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          class="w-full h-full object-cover"
         />
         <div v-else class="w-full h-full flex items-center justify-center">
           <i class="fas fa-paw text-gray-400 text-4xl"></i>
@@ -136,6 +132,7 @@
 <script setup>
 import { computed } from 'vue'
 import BaseCard from './BaseCard.vue'
+import { getImageUrl } from '../../services/announcementService.js'
 
 const props = defineProps({
   announcement: {
@@ -256,23 +253,6 @@ const contactInfo = computed(() => {
   
   return null
 })
-
-// Utility functions
-const getImageUrl = (image) => {
-  if (!image) return null
-  
-  // If image is a string (direct URL), return it
-  if (typeof image === 'string') {
-    return image
-  }
-  
-  // If image is an object with url property
-  if (typeof image === 'object' && image.url) {
-    return image.url
-  }
-  
-  return null
-}
 
 const formatType = (type) => {
   if (!type) return 'Unknown'

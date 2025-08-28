@@ -213,98 +213,18 @@
           
         </div>
 
-        <!-- Image Upload -->
-        <!-- Image Upload -->
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">
-            Pet Photos (Max {{ maxImages }})
-          </label>
-          
-          <!-- File Upload -->
-          <div class="flex flex-col space-y-4">
-            <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
-              <input
-                ref="fileInput"
-                type="file"
-                multiple
-                accept="image/jpeg,image/jpg,image/png,image/webp"
-                @change="handleFileUpload"
-                class="hidden"
-              />
-              <div class="space-y-2">
-                <i class="fas fa-cloud-upload-alt text-3xl text-gray-400"></i>
-                <div>
-                  <button
-                    type="button"
-                    @click="$refs.fileInput.click()"
-                    class="text-blue-600 hover:text-blue-500 font-medium"
-                  >
-                    Upload photos
-                  </button>
-                  <p class="text-gray-500 text-sm">or drag and drop</p>
-                </div>
-                <p class="text-xs text-gray-400">JPEG, PNG, WebP up to 10MB each</p>
-              </div>
-            </div>
-            
-            <!-- URL Input -->
-            <div class="flex space-x-2">
-              <input
-                v-model="urlInput"
-                type="url"
-                placeholder="Or add image URL"
-                class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                @keypress.enter.prevent="handleUrlAdd"
-              />
-              <button
-                type="button"
-                @click="handleUrlAdd"
-                :disabled="!urlInput.trim()"
-                class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Add URL
-              </button>
-            </div>
-          </div>
-          
-          <!-- Image Counter -->
-          <div class="mt-2 text-sm text-gray-600">
-            {{ previewImages.length }} / {{ maxImages }} images
-          </div>
-          
-          <!-- Image Preview -->
-          <div v-if="previewImages.length > 0" class="mt-4 grid grid-cols-2 md:grid-cols-3 gap-4">
-            <div
-              v-for="(image, index) in previewImages"
-              :key="image.id"
-              class="relative group"
-            >
-              <img
-                :src="image.src"
-                :alt="image.name"
-                class="w-full h-24 object-cover rounded-lg border border-gray-200"
-                @error="(e) => { e.target.src = '/placeholder-image.png'; e.target.onerror = null; }"
-              />
-              <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-200 rounded-lg flex items-center justify-center">
-                <button
-                  type="button"
-                  @click="removeImage(index)"
-                  class="opacity-0 group-hover:opacity-100 bg-red-500 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm hover:bg-red-600 transition-all duration-200"
-                >
-                  <i class="fas fa-times"></i>
-                </button>
-              </div>
-              <!-- Type indicator -->
-              <div class="absolute top-1 left-1 px-1 py-0.5 bg-black bg-opacity-60 text-white text-xs rounded">
-                {{ image.type === 'file' ? 'FILE' : 'URL' }}
-              </div>
-              <!-- Image name -->
-              <div class="absolute bottom-1 left-1 right-1 px-1 py-0.5 bg-black bg-opacity-60 text-white text-xs rounded truncate">
-                {{ image.name }}
-              </div>
-            </div>
-          </div>
-        </div>        <!-- Date Last Seen (for lost pets) -->
+        <!-- Multi-Image Upload Component -->
+        <MultiImageUpload
+          v-model="imageData"
+          :max-images="5"
+          @files-changed="handleImageChange"
+          @error="handleImageError"
+        />                <!-- Error Display -->
+        <div v-if="submitError" class="bg-red-50 border border-red-200 rounded-md p-3">
+          <p class="text-red-600 text-sm">{{ submitError }}</p>
+        </div>
+
+        <!-- Last Seen Date (for lost pets) -->
         <div v-if="formData.type === 'lost'">
           <label class="block text-sm font-medium text-gray-700 mb-2">
             Date Last Seen
@@ -334,6 +254,11 @@
               />
             </div>
           </div>
+        </div>
+
+        <!-- Error Display -->
+        <div v-if="submitError" class="bg-red-50 border border-red-200 rounded-md p-3">
+          <p class="text-red-600 text-sm">{{ submitError }}</p>
         </div>
 
         <!-- Actions -->
@@ -367,7 +292,14 @@
 <script setup>
 import { ref, reactive, watch, computed, onMounted } from 'vue'
 import BaseButton from '../buttons/BaseButton.vue'
-import { announcementApi } from '@/api/announcements'
+import MultiImageUpload from '../ui/MultiImageUpload.vue'
+import { 
+  processAnnouncementData, 
+  createAnnouncementFormData, 
+  createAnnouncement, 
+  updateAnnouncement,
+  getImageUrl 
+} from '@/services/announcementService'
 
 const props = defineProps({
   isOpen: {
@@ -385,11 +317,8 @@ const emit = defineEmits(['close', 'success'])
 const isEditing = ref(false)
 const isSubmitting = ref(false)
 const loadingLocation = ref(false)
-const previewImages = ref([])
-const fileInput = ref(null)
-const urlInput = ref('')
-const selectedFiles = ref([])
-const imageUrls = ref([])
+const submitError = ref('')
+const imageData = ref({ files: [], urls: [], total: 0 })
 
 const maxImages = 5
 
@@ -398,20 +327,16 @@ const today = computed(() => {
   return new Date().toISOString().split('T')[0]
 })
 
-const dateOptions = computed(() => {
+const quickDateOptions = computed(() => {
   const now = new Date()
   return [
     {
       label: 'Today',
-      value: new Date(now).toISOString().split('T')[0]
+      value: today.value
     },
     {
-      label: 'Yesterday',
+      label: 'Yesterday', 
       value: new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-    },
-    {
-      label: '2 days ago',
-      value: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
     },
     {
       label: '3 days ago',
@@ -420,10 +345,6 @@ const dateOptions = computed(() => {
     {
       label: '1 week ago',
       value: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-    },
-    {
-      label: '2 weeks ago',
-      value: new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
     }
   ]
 })
@@ -455,10 +376,9 @@ const formData = reactive({
 const resetForm = () => {
   isEditing.value = false
   isSubmitting.value = false
-  previewImages.value = []
-  selectedFiles.value = []
-  imageUrls.value = []
-  urlInput.value = ''
+  submitError.value = ''
+  imageData.value = { files: [], urls: [], total: 0 }
+  
   Object.assign(formData, {
     type: '',
     petName: '',
@@ -510,9 +430,13 @@ watch(() => props.announcement, (newAnnouncement) => {
       images: newAnnouncement.images || []
     })
     
-    // Load existing images for preview
-    if (newAnnouncement.images) {
-      previewImages.value = [...newAnnouncement.images]
+    // Load existing images for the upload component
+    if (newAnnouncement.images && newAnnouncement.images.length > 0) {
+      imageData.value = {
+        files: [],
+        urls: newAnnouncement.images.map(img => getImageUrl(img.url || img)),
+        total: newAnnouncement.images.length
+      }
     }
   } else {
     resetForm()
@@ -528,6 +452,15 @@ watch(() => props.isOpen, (isOpen) => {
 
 const closeModal = () => {
   emit('close')
+}
+
+// Image handling
+const handleImageChange = (newImageData) => {
+  imageData.value = newImageData
+}
+
+const handleImageError = (errorMessage) => {
+  submitError.value = errorMessage
 }
 
 const getCurrentLocation = () => {
@@ -625,226 +558,55 @@ const reverseGeocode = async (latitude, longitude) => {
   }
 }
 
-const handleFileUpload = (event) => {
-  const files = Array.from(event.target.files)
-  
-  // Validate files
-  const validFiles = files.filter(file => {
-    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
-    const maxSize = 10 * 1024 * 1024 // 10MB
-    
-    if (!validTypes.includes(file.type)) {
-      alert(`${file.name}: Invalid file type. Only JPEG, PNG, WebP are allowed.`)
-      return false
-    }
-    
-    if (file.size > maxSize) {
-      alert(`${file.name}: File too large. Maximum 10MB allowed.`)
-      return false
-    }
-    
-    return true
-  })
-  
-  // Check total image limit
-  if (previewImages.value.length + validFiles.length > maxImages) {
-    alert(`Maximum ${maxImages} images allowed total.`)
-    return
-  }
-  
-  // Add to selectedFiles array
-  selectedFiles.value.push(...validFiles)
-  
-  // Generate previews
-  validFiles.forEach(file => {
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      previewImages.value.push({
-        id: Date.now() + Math.random(),
-        src: e.target.result,
-        name: file.name,
-        type: 'file',
-        file: file
-      })
-    }
-    reader.readAsDataURL(file)
-  })
-
-  // Clear the input
-  event.target.value = ''
-}
-
-const handleUrlAdd = () => {
-  const url = urlInput.value.trim()
-  
-  if (!url) return
-  
-  // Basic URL validation
-  try {
-    new URL(url)
-  } catch {
-    alert('Please enter a valid URL')
-    return
-  }
-  
-  // Check total image limit
-  if (previewImages.value.length >= maxImages) {
-    alert(`Maximum ${maxImages} images allowed total.`)
-    return
-  }
-  
-  // Check if URL already exists
-  if (imageUrls.value.includes(url)) {
-    alert('This URL is already added')
-    return
-  }
-  
-  imageUrls.value.push(url)
-  previewImages.value.push({
-    id: Date.now(),
-    src: url,
-    name: 'URL Image',
-    type: 'url',
-    url: url
-  })
-  
-  urlInput.value = ''
-}
-
-const removeImage = (index) => {
-  const imageToRemove = previewImages.value[index]
-  
-  if (imageToRemove.type === 'file') {
-    // Remove from selectedFiles
-    const fileIndex = selectedFiles.value.findIndex(file => file === imageToRemove.file)
-    if (fileIndex > -1) {
-      selectedFiles.value.splice(fileIndex, 1)
-    }
-  } else if (imageToRemove.type === 'url') {
-    // Remove from imageUrls
-    const urlIndex = imageUrls.value.findIndex(url => url === imageToRemove.url)
-    if (urlIndex > -1) {
-      imageUrls.value.splice(urlIndex, 1)
-    }
-  }
-  
-  // Remove from preview
-  previewImages.value.splice(index, 1)
-}
-
-// Date selection functions
-const setLastSeenDate = (date) => {
-  formData.lastSeenDate = date
-}
-
-const isDateSelected = (date) => {
-  return formData.lastSeenDate === date
-}
-
-// Helper function to get cookie value
-const getCookie = (name) => {
-  const value = `; ${document.cookie}`;
-  const parts = value.split(`; ${name}=`);
-  if (parts.length === 2) return parts.pop().split(';').shift();
-  return null;
-}
-
+// Form submission using new modular approach
 const handleSubmit = async () => {
   console.log('handleSubmit called with formData:', formData)
+  console.log('imageData:', imageData.value)
+  
   isSubmitting.value = true
+  submitError.value = ''
 
   try {
-    // Create FormData for multipart upload
-    const submissionFormData = new FormData()
+    // Process the form data
+    const processedData = processAnnouncementData(formData)
+    console.log('processedData:', processedData)
     
-    // Debug: log all data being sent
-    console.log('Form data being prepared:', {
-      type: formData.type,
-      petName: formData.petName,
-      petType: formData.petType,
-      selectedFiles: selectedFiles.value.length,
-      imageUrls: imageUrls.value.length
-    })
+    // Create FormData with images
+    const submissionFormData = createAnnouncementFormData(
+      processedData, 
+      imageData.value.files || [], 
+      imageData.value.urls || []
+    )
     
-    // Add all form fields
-    submissionFormData.append('type', formData.type)
-    submissionFormData.append('petName', formData.petName)
-    submissionFormData.append('petType', formData.petType)
-    submissionFormData.append('description', formData.description)
-    
-    // Add location as JSON string
-    const locationData = {
-      address: formData.locationName || formData.locationDetails.address || '',
-      coordinates: {
-        latitude: formData.locationCoordinates ? formData.locationCoordinates[1] : 0,
-        longitude: formData.locationCoordinates ? formData.locationCoordinates[0] : 0
-      }
+    // Debug: Log FormData contents
+    console.log('FormData contents:')
+    for (let [key, value] of submissionFormData.entries()) {
+      console.log(key, value)
     }
-    submissionFormData.append('location', JSON.stringify(locationData))
     
-    // Add contact info as JSON string
-    const contactData = {
-      phone: formData.contactInfo.phone || '',
-      email: formData.contactInfo.email || '',
-      preferredContact: formData.contactInfo.preferredContact || 'both'
-    }
-    submissionFormData.append('contactInfo', JSON.stringify(contactData))
-    
-    // Add lastSeenDate
-    if (formData.lastSeenDate) {
-      console.log('Adding lastSeenDate:', formData.lastSeenDate)
-      submissionFormData.append('lastSeenDate', new Date(formData.lastSeenDate + 'T12:00:00.000Z').toISOString())
+    let response
+    if (isEditing.value && props.announcement) {
+      response = await updateAnnouncement(props.announcement.id, submissionFormData)
     } else {
-      console.log('No lastSeenDate provided, type is:', formData.type)
+      response = await createAnnouncement(submissionFormData)
     }
     
-    // Add other optional fields
-    if (formData.breed) submissionFormData.append('breed', formData.breed)
-    if (formData.color) submissionFormData.append('color', formData.color)
-    if (formData.age) submissionFormData.append('age', formData.age)
+    console.log('Announcement operation successful:', response)
     
-    // Add URL images as JSON array
-    if (imageUrls.value.length > 0) {
-      submissionFormData.append('images', JSON.stringify(imageUrls.value))
-    }
-    
-    // Add file uploads
-    selectedFiles.value.forEach(file => {
-      submissionFormData.append('images', file)
-    })
-
-    // Submit using FormData (no JSON Content-Type header)
-    const response = await fetch('http://127.0.0.1:3003/v1/announcements', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${getCookie('auth_token')}`
-        // Don't set Content-Type - let browser set it for FormData
-      },
-      body: submissionFormData
-    })
-    
-    if (!response.ok) {
-      const errorData = await response.json()
-      throw new Error(errorData.message || 'Failed to create announcement')
-    }
-    
-    const result = await response.json()
-    console.log('Announcement created:', result)
-    
-    emit('success', result.announcement)
+    emit('success', response.announcement || response)
     emit('close')
     
   } catch (error) {
     console.error('Error submitting form:', error)
-    alert('Failed to submit announcement. Please try again.')
+    submitError.value = error.message || 'Failed to submit announcement. Please try again.'
   } finally {
     isSubmitting.value = false
   }
 }
 
 onMounted(() => {
-  // Auto-fill contact info from user store if available
-  // TODO: Get user info from auth store
+  // Any initialization logic can go here
+  console.log('AnnouncementFormModal mounted')
 })
 </script>
 
