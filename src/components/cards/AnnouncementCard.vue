@@ -101,7 +101,7 @@
           @click.stop="$emit('view', announcement)"
           class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center justify-center group"
         >
-          <span>View Details</span>
+          <span>View</span>
           <i class="fas fa-eye ml-2 group-hover:scale-110 transition-transform"></i>
         </button>
 

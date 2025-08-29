@@ -124,9 +124,10 @@
     <!-- Resolve Modal -->
     <ResolveAnnouncementModal
       v-if="resolvingAnnouncement"
+      :is-visible="true"
       :announcement="resolvingAnnouncement"
       @close="resolvingAnnouncement = null"
-      @success="handleAnnouncementResolved"
+      @confirm="handleResolveConfirm"
     />
     <!-- Confirmation Modal for Delete -->
     <ConfirmationModal
@@ -332,10 +333,62 @@ const handleEditAnnouncement = (announcement) => {
 }
 
 const handleResolveAnnouncement = (announcement) => {
+  console.log('🎯 handleResolveAnnouncement called with:', announcement);
   if (viewingAnnouncement.value) {
     viewingAnnouncement.value = null
   }
   resolvingAnnouncement.value = announcement
+}
+
+const handleResolveConfirm = async (data) => {
+  console.log('✅ handleResolveConfirm called with:', data);
+  
+  if (!data.announcement) {
+    console.error('No announcement data provided');
+    return;
+  }
+  
+  try {
+    // Get the ID - try all possible fields
+    const announcementId = data.announcement.announcementId || 
+                          data.announcement.id || 
+                          data.announcement._id ||
+                          data.announcement.objectId ||
+                          data.announcement.uuid;
+    
+    console.log('🔍 Found ID for resolve:', announcementId);
+    
+    if (!announcementId) {
+      throw new Error('No valid ID found for announcement');
+    }
+    
+    // Call the API to resolve
+    console.log('🌐 Calling resolve API...');
+    const response = await announcementApi.resolve(announcementId, {
+      note: data.notes,
+      resolvedDate: data.resolvedDate
+    });
+    
+    console.log('✅ Resolve API response:', response);
+    
+    // Success - show toast
+    toastStore.success({
+      title: 'Success',
+      message: 'Announcement resolved successfully.'
+    });
+    
+    // Close modal and reload
+    resolvingAnnouncement.value = null;
+    await loadAnnouncements();
+    
+  } catch (error) {
+    console.error('🚀 Error resolving:', error);
+    
+    toastStore.error({
+      title: 'Error',
+      message: 'Failed to resolve announcement. Please try again.'
+    });
+  }
 }
 
 const handleDeleteAnnouncement = (announcement) => {
@@ -424,16 +477,6 @@ const handleAnnouncementSaved = () => {
   toastStore.success({
     title: 'Success',
     message: editingAnnouncement.value ? 'Announcement updated successfully.' : 'Announcement created successfully.'
-  })
-}
-
-const handleAnnouncementResolved = () => {
-  resolvingAnnouncement.value = null
-  loadAnnouncements()
-  
-  toastStore.success({
-    title: 'Success',
-    message: 'Announcement resolved successfully.'
   })
 }
 
