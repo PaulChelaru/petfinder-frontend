@@ -28,10 +28,29 @@ const apiRequest = async (url, options = {}) => {
     }
   }
   
-  // Don't set Content-Type for FormData, let browser set it
-  if (options.body && !(options.body instanceof FormData)) {
-    config.headers['Content-Type'] = 'application/json'
+  // Handle body serialization
+  if (options.body) {
+    if (options.body instanceof FormData) {
+      // Don't set Content-Type for FormData, let browser set it with boundary
+    } else if (typeof options.body === 'object') {
+      // JSON object - stringify and set content type
+      config.body = JSON.stringify(options.body)
+      config.headers['Content-Type'] = 'application/json'
+    } else {
+      // Already a string or other primitive
+      config.headers['Content-Type'] = 'application/json'
+    }
   }
+  
+  console.log('Making API request:', {
+    url: `${API_BASE_URL}${url}`,
+    method: config.method || 'GET',
+    headers: config.headers,
+    bodyType: config.body ? (config.body instanceof FormData ? 'FormData' : typeof config.body) : 'none',
+    bodyPreview: config.body instanceof FormData ? 'FormData content' : 
+                 typeof config.body === 'string' ? config.body.substring(0, 200) + '...' : 
+                 config.body
+  })
   
   const response = await fetch(`${API_BASE_URL}${url}`, config)
   
@@ -63,12 +82,45 @@ export const processAnnouncementData = (formData) => {
     delete processed.locationCoordinates
   }
   
-  // Ensure contact info is properly structured
+  // Ensure contact info is properly structured and valid
   if (processed.contactInfo && typeof processed.contactInfo === 'object') {
-    processed.contactInfo = {
+    const contactInfo = {
       phone: processed.contactInfo.phone || '',
       email: processed.contactInfo.email || '',
-      preferredContact: processed.contactInfo.preferredContact || 'both'
+      preferredContact: processed.contactInfo.preferredContact || 'phone'
+    }
+    
+    // Clean up contactInfo based on backend validation rules
+    // Remove empty email if present (backend validates email format)
+    if (!contactInfo.email || contactInfo.email.trim() === '') {
+      delete contactInfo.email
+    }
+    
+    // Remove empty phone if present
+    if (!contactInfo.phone || contactInfo.phone.trim() === '') {
+      delete contactInfo.phone
+    }
+    
+    // Ensure preferredContact is valid (phone or email, not "both")
+    if (contactInfo.preferredContact === 'both') {
+      // If both phone and email are present, default to phone
+      if (contactInfo.phone && contactInfo.email) {
+        contactInfo.preferredContact = 'phone'
+      } else if (contactInfo.phone) {
+        contactInfo.preferredContact = 'phone'
+      } else if (contactInfo.email) {
+        contactInfo.preferredContact = 'email'
+      } else {
+        contactInfo.preferredContact = 'phone'
+      }
+    }
+    
+    // Ensure we have at least one contact method (backend requires anyOf phone or email)
+    if (!contactInfo.phone && !contactInfo.email) {
+      // Don't include contactInfo if no valid contact method
+      delete processed.contactInfo
+    } else {
+      processed.contactInfo = contactInfo
     }
   }
   
@@ -83,6 +135,7 @@ export const processAnnouncementData = (formData) => {
     }
   }
   
+  console.log('processAnnouncementData result:', JSON.stringify(processed, null, 2))
   return processed
 }
 
@@ -91,14 +144,27 @@ export const processAnnouncementData = (formData) => {
  * @param {Object} announcementData - Processed announcement data
  * @param {Array} files - Array of File objects to upload
  * @param {Array} existingImages - Array of existing image URLs
+ * @param {boolean} isUpdate - Whether this is an update operation
  * @returns {FormData} - Ready for submission
  */
-export const createAnnouncementFormData = (announcementData, files = [], existingImages = []) => {
+export const createAnnouncementFormData = (announcementData, files = [], existingImages = [], isUpdate = false) => {
   const formData = new FormData()
+  
+  // Define allowed fields for update operations based on backend schema
+  const allowedUpdateFields = [
+    'petName', 'breed', 'color', 'age', 'description', 'lastSeenDate', 
+    'location', 'contactInfo', 'images', 'status', 'resolvedNote', 'matchedWith'
+  ]
   
   // Add form fields
   Object.entries(announcementData).forEach(([key, value]) => {
     if (key !== 'images' && value !== null && value !== undefined && value !== '') {
+      // For updates, only include allowed fields
+      if (isUpdate && !allowedUpdateFields.includes(key)) {
+        console.log(`Skipping field '${key}' for update operation as it's not allowed by schema`)
+        return
+      }
+      
       if (typeof value === 'object') {
         formData.append(key, JSON.stringify(value))
       } else {
@@ -135,14 +201,58 @@ export const createAnnouncement = async (formData) => {
 /**
  * Update an existing announcement
  * @param {string} announcementId - ID of announcement to update
- * @param {FormData} formData - Updated form data
+ * @param {Object|FormData} updateData - Updated data (JSON for simple updates, FormData for image updates)
  * @returns {Promise<Object>} - API response
  */
-export const updateAnnouncement = async (announcementId, formData) => {
+export const updateAnnouncement = async (announcementId, updateData) => {
   return apiRequest(`/announcements/${announcementId}`, {
     method: 'PUT',
-    body: formData
+    body: updateData
   })
+}
+
+/**
+ * Helper to create JSON data specifically for updates (no image changes)
+ * @param {Object} announcementData - Processed announcement data
+ * @returns {Object} - JSON data ready for update submission
+ */
+export const createUpdateJsonData = (announcementData) => {
+  // Define allowed fields for update operations based on backend schema
+  const allowedUpdateFields = [
+    'petName', 'breed', 'color', 'age', 'description', 'lastSeenDate', 
+    'location', 'contactInfo', 'status', 'resolvedNote', 'matchedWith'
+  ]
+  
+  const updateData = {}
+  
+  // Add only allowed fields
+  Object.entries(announcementData).forEach(([key, value]) => {
+    if (allowedUpdateFields.includes(key) && value !== null && value !== undefined && value !== '') {
+      // For complex objects, ensure they're properly structured
+      if (typeof value === 'object' && !Array.isArray(value)) {
+        // Deep clone to avoid mutation and ensure proper structure
+        updateData[key] = JSON.parse(JSON.stringify(value))
+      } else {
+        updateData[key] = value
+      }
+    } else if (!allowedUpdateFields.includes(key)) {
+      console.log(`Skipping field '${key}' for update operation as it's not allowed by schema`)
+    }
+  })
+  
+  console.log('Final update data structure:', JSON.stringify(updateData, null, 2))
+  return updateData
+}
+
+/**
+ * Helper to create FormData specifically for updates
+ * @param {Object} announcementData - Processed announcement data
+ * @param {Array} files - Array of File objects to upload
+ * @param {Array} existingImages - Array of existing image URLs
+ * @returns {FormData} - Ready for update submission
+ */
+export const createUpdateFormData = (announcementData, files = [], existingImages = []) => {
+  return createAnnouncementFormData(announcementData, files, existingImages, true)
 }
 
 /**

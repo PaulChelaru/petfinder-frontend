@@ -213,15 +213,24 @@
           
         </div>
 
-        <!-- Multi-Image Upload Component -->
-        <MultiImageUpload
-          v-model="imageData"
-          :max-images="5"
-          @files-changed="handleImageChange"
-          @error="handleImageError"
-        />                <!-- Error Display -->
-        <div v-if="submitError" class="bg-red-50 border border-red-200 rounded-md p-3">
-          <p class="text-red-600 text-sm">{{ submitError }}</p>
+        <!-- Multi-Image Upload Component - Only show for creation, not editing -->
+        <div v-if="!isEditing">
+          <MultiImageUpload
+            v-model="imageData"
+            :max-images="5"
+            @files-changed="handleImageChange"
+            @error="handleImageError"
+          />
+        </div>
+        
+        <!-- Info message for editing -->
+        <div v-else class="bg-blue-50 border border-blue-200 rounded-md p-3">
+          <div class="flex items-center">
+            <i class="fas fa-info-circle text-blue-500 mr-2"></i>
+            <p class="text-blue-700 text-sm">
+              Image editing is not available in edit mode. Only text fields can be updated.
+            </p>
+          </div>
         </div>
 
         <!-- Last Seen Date (for lost pets) -->
@@ -233,7 +242,7 @@
             <!-- Quick options -->
             <div class="flex flex-wrap gap-2">
               <button
-                v-for="option in dateOptions"
+                v-for="option in quickDateOptions"
                 :key="option.value"
                 type="button"
                 @click="setLastSeenDate(option.value)"
@@ -296,6 +305,8 @@ import MultiImageUpload from '../ui/MultiImageUpload.vue'
 import { 
   processAnnouncementData, 
   createAnnouncementFormData, 
+  createUpdateFormData,
+  createUpdateJsonData,
   createAnnouncement, 
   updateAnnouncement,
   getImageUrl 
@@ -373,6 +384,14 @@ const formData = reactive({
 })
 
 // Functions - defined before watchers to avoid initialization issues
+const setLastSeenDate = (dateValue) => {
+  formData.lastSeenDate = dateValue
+}
+
+const isDateSelected = (dateValue) => {
+  return formData.lastSeenDate === dateValue
+}
+
 const resetForm = () => {
   isEditing.value = false
   isSubmitting.value = false
@@ -406,7 +425,29 @@ const resetForm = () => {
 // Watch for announcement prop changes (editing mode)
 watch(() => props.announcement, (newAnnouncement) => {
   if (newAnnouncement) {
+    console.log('Populating form with announcement data:', newAnnouncement)
     isEditing.value = true
+    
+    // Process lastSeenDate - convert from ISO string to date input format
+    let lastSeenDateValue = ''
+    if (newAnnouncement.lastSeenDate) {
+      try {
+        const date = new Date(newAnnouncement.lastSeenDate)
+        lastSeenDateValue = date.toISOString().split('T')[0] // YYYY-MM-DD format
+      } catch (error) {
+        console.warn('Invalid lastSeenDate:', newAnnouncement.lastSeenDate)
+      }
+    }
+    
+    // Process location coordinates
+    let coordinates = null
+    if (newAnnouncement.location?.coordinates) {
+      coordinates = [
+        newAnnouncement.location.coordinates.longitude || 0,
+        newAnnouncement.location.coordinates.latitude || 0
+      ]
+    }
+    
     Object.assign(formData, {
       type: newAnnouncement.type || '',
       petName: newAnnouncement.petName || '',
@@ -415,20 +456,23 @@ watch(() => props.announcement, (newAnnouncement) => {
       color: newAnnouncement.color || '',
       age: newAnnouncement.age || '',
       description: newAnnouncement.description || '',
-      locationName: newAnnouncement.locationName || '',
-      locationCoordinates: newAnnouncement.location?.coordinates || null,
+      locationName: newAnnouncement.locationName || newAnnouncement.location?.address || '',
+      locationCoordinates: coordinates,
       locationDetails: {
-        city: newAnnouncement.locationDetails?.city || '',
-        state: newAnnouncement.locationDetails?.state || '',
-        address: newAnnouncement.locationDetails?.address || ''
+        city: newAnnouncement.locationDetails?.city || newAnnouncement.location?.city || '',
+        state: newAnnouncement.locationDetails?.state || newAnnouncement.location?.state || '',
+        address: newAnnouncement.locationDetails?.address || newAnnouncement.location?.address || ''
       },
       contactInfo: {
         phone: newAnnouncement.contactInfo?.phone || '',
-        email: newAnnouncement.contactInfo?.email || ''
+        email: newAnnouncement.contactInfo?.email || '',
+        preferredContact: newAnnouncement.contactInfo?.preferredContact || 'phone'
       },
-      lastSeenDate: newAnnouncement.lastSeenDate || '',
+      lastSeenDate: lastSeenDateValue,
       images: newAnnouncement.images || []
     })
+    
+    console.log('Form data after population:', formData)
     
     // Load existing images for the upload component
     if (newAnnouncement.images && newAnnouncement.images.length > 0) {
@@ -571,23 +615,29 @@ const handleSubmit = async () => {
     const processedData = processAnnouncementData(formData)
     console.log('processedData:', processedData)
     
-    // Create FormData with images
-    const submissionFormData = createAnnouncementFormData(
-      processedData, 
-      imageData.value.files || [], 
-      imageData.value.urls || []
-    )
-    
-    // Debug: Log FormData contents
-    console.log('FormData contents:')
-    for (let [key, value] of submissionFormData.entries()) {
-      console.log(key, value)
-    }
-    
     let response
     if (isEditing.value && props.announcement) {
-      response = await updateAnnouncement(props.announcement.id, submissionFormData)
+      // For updates, use JSON instead of FormData since we're not editing images
+      const updateData = createUpdateJsonData(processedData)
+      console.log('Update JSON data:', updateData)
+      console.log('Update JSON data stringified:', JSON.stringify(updateData, null, 2))
+      console.log('Type of updateData:', typeof updateData)
+      
+      response = await updateAnnouncement(props.announcement.announcementId || props.announcement.id, updateData)
     } else {
+      // For creation, use FormData with images
+      const submissionFormData = createAnnouncementFormData(
+        processedData, 
+        imageData.value.files || [], 
+        imageData.value.urls || []
+      )
+      
+      // Debug: Log FormData contents
+      console.log('FormData contents:')
+      for (let [key, value] of submissionFormData.entries()) {
+        console.log(key, value)
+      }
+      
       response = await createAnnouncement(submissionFormData)
     }
     
