@@ -189,20 +189,103 @@
           </BaseButton>
         </div>
 
-        <!-- Test Matches Section - Always visible -->
-        <div class="mt-8 pt-6 border-t border-gray-200 bg-blue-50 p-4 rounded">
-          <h3 class="text-lg font-semibold text-blue-900 mb-4">🔍 Test Potriviri găsite</h3>
-          <p class="text-blue-700">Announcement ID: {{ announcement?.announcementId || 'N/A' }}</p>
-          <p class="text-blue-700">Modal open: {{ isOpen }}</p>
-          <p class="text-blue-700">Matches count: {{ matches?.length || 0 }}</p>
-          <p class="text-blue-700">Loading: {{ matchesLoading }}</p>
-          <p class="text-blue-700">Error: {{ matchesError || 'None' }}</p>
+        <!-- Potential Matches Section -->
+        <div v-if="announcement?.matches && announcement.matches.length > 0 && Array.isArray(announcement.matches) && typeof announcement.matches[0] === 'object'" 
+             class="mt-8 pt-6 border-t border-gray-200">
+          <h3 class="text-lg font-semibold text-gray-900 mb-4">
+            <i class="fas fa-search mr-2 text-blue-600"></i>
+            Potential Matches ({{ announcement.matches.length }})
+          </h3>
           
-          <div v-if="matches && matches.length > 0" class="mt-4">
-            <div v-for="match in matches" :key="match.matchId" class="bg-white p-2 rounded mb-2">
-              <p class="font-semibold">{{ match.matchedAnnouncement.petName }}</p>
-              <p class="text-sm">Confidence: {{ Math.round(match.confidence * 100) }}%</p>
+          <div class="space-y-4">
+            <div v-for="match in announcement.matches" 
+                 :key="match.id || match.announcementId" 
+                 class="bg-gray-50 rounded-lg p-4 border border-gray-200 hover:border-blue-300 transition-colors">
+              
+              <!-- Match Header -->
+              <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center space-x-2">
+                  <div class="w-3 h-3 bg-green-500 rounded-full"></div>
+                  <span class="font-medium text-gray-900">Match found</span>
+                  <span class="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
+                    {{ formatType(match.type) }}
+                  </span>
+                </div>
+                <span class="text-xs text-gray-500">
+                  {{ formatDate(match.createdAt) }}
+                </span>
+              </div>
+
+              <!-- Matched Announcement Details -->
+              <div class="bg-white rounded-md p-3 border border-gray-100">
+                <div class="flex items-center mb-2">
+                  <h4 class="font-semibold text-gray-900">{{ match.petName }}</h4>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm text-gray-600">
+                  <div v-if="match.petType" class="flex items-center">
+                    <i class="fas fa-paw mr-2 text-gray-400"></i>
+                    {{ formatPetType(match.petType) }}
+                  </div>
+                  <div v-if="match.breed" class="flex items-center">
+                    <i class="fas fa-dog mr-2 text-gray-400"></i>
+                    {{ match.breed }}
+                  </div>
+                  <div v-if="match.color" class="flex items-center">
+                    <i class="fas fa-palette mr-2 text-gray-400"></i>
+                    {{ match.color }}
+                  </div>
+                  <div v-if="match.locationName" class="flex items-center">
+                    <i class="fas fa-map-marker-alt mr-2 text-gray-400"></i>
+                    {{ match.locationName }}
+                  </div>
+                </div>
+                
+                <div v-if="match.description" class="mt-2">
+                  <p class="text-sm text-gray-700 line-clamp-2">{{ match.description }}</p>
+                </div>
+                
+                <!-- Images preview -->
+                <div v-if="match.images && match.images.length > 0" 
+                     class="mt-3 flex space-x-2">
+                  <img v-for="(image, index) in match.images.slice(0, 3)" 
+                       :key="index"
+                       :src="image.url || image"
+                       :alt="`Pet image ${index + 1}`"
+                       class="w-12 h-12 object-cover rounded border border-gray-200">
+                  <div v-if="match.images.length > 3" 
+                       class="w-12 h-12 bg-gray-100 rounded border border-gray-200 flex items-center justify-center">
+                    <span class="text-xs text-gray-500">+{{ match.images.length - 3 }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Match Actions -->
+              <div class="mt-4 flex flex-wrap gap-2">
+                <button class="px-3 py-1 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700 transition-colors">
+                  <i class="fas fa-eye mr-1"></i>
+                  View Details
+                </button>
+                <button class="px-3 py-1 bg-green-600 text-white rounded-md text-sm hover:bg-green-700 transition-colors">
+                  <i class="fas fa-phone mr-1"></i>
+                  Contact Owner
+                </button>
+                <button class="px-3 py-1 bg-gray-100 text-gray-700 rounded-md text-sm hover:bg-gray-200 transition-colors">
+                  <i class="fas fa-flag mr-1"></i>
+                  Report Issue
+                </button>
+              </div>
             </div>
+          </div>
+        </div>
+
+        <!-- No Matches Message -->
+        <div v-else-if="announcement?.matches && announcement.matches.length === 0" 
+             class="mt-8 pt-6 border-t border-gray-200">
+          <div class="text-center py-6">
+            <i class="fas fa-search text-4xl text-gray-300 mb-3"></i>
+            <h3 class="text-lg font-medium text-gray-900 mb-2">No matches found yet</h3>
+            <p class="text-gray-600">We'll notify you when potential matches are discovered.</p>
           </div>
         </div>
       </div>
@@ -220,10 +303,6 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
 import BaseButton from './buttons/BaseButton.vue'
-import MatchesList from './MatchesList.vue'
-import { useMatches } from '../composables/useMatches.js'
-
-console.log('AnnouncementDetailModal loaded')
 
 const props = defineProps({
   isOpen: {
@@ -236,40 +315,9 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['close', 'selectMatch'])
+const emit = defineEmits(['close', 'edit', 'resolve', 'delete'])
 
 const selectedImage = ref(null)
-
-// Matches functionality
-const { 
-  matches, 
-  loading: matchesLoading, 
-  error: matchesError,
-  fetchAnnouncementMatches,
-  clearMatches
-} = useMatches()
-
-console.log('useMatches loaded:', { matches: matches.value, loading: matchesLoading.value })
-
-// Watch for announcement changes to fetch matches
-watch(() => props.announcement?.announcementId, (newId) => {
-  console.log('Announcement ID changed:', newId, 'Modal open:', props.isOpen)
-  if (newId && props.isOpen) {
-    console.log('Fetching matches for:', newId)
-    fetchAnnouncementMatches(newId)
-  }
-}, { immediate: true })
-
-// Watch for modal open/close
-watch(() => props.isOpen, (isOpen) => {
-  console.log('Modal open state changed:', isOpen)
-  if (isOpen && props.announcement?.announcementId) {
-    console.log('Fetching matches for announcement:', props.announcement.announcementId)
-    fetchAnnouncementMatches(props.announcement.announcementId)
-  } else if (!isOpen) {
-    clearMatches()
-  }
-})
 
 const typeClasses = computed(() => {
   if (!props.announcement?.type) return 'bg-gray-100 text-gray-700'
@@ -284,7 +332,6 @@ const typeClasses = computed(() => {
 
 const closeModal = () => {
   emit('close')
-  clearMatches()
 }
 
 const openImageModal = (image) => {
@@ -347,3 +394,13 @@ const shareAnnouncement = () => {
   }
 }
 </script>
+
+<style scoped>
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+</style>
