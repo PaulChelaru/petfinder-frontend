@@ -93,6 +93,42 @@
       </div>
     </div>
 
+    <!-- Matches Section -->
+    <div v-if="announcement.matches && announcement.matches.length > 0" class="px-6 py-4 border-t border-gray-100 bg-gray-50">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center">
+          <div class="w-8 h-8 rounded-full bg-yellow-100 flex items-center justify-center mr-3 flex-shrink-0">
+            <i class="fas fa-paw text-yellow-600 text-sm"></i>
+          </div>
+          <div>
+            <span class="text-sm font-medium text-gray-700">
+              {{ announcement.matches.length }} potential match{{ announcement.matches.length !== 1 ? 'es' : '' }}
+            </span>
+            <div v-if="announcement.matches[0]" class="text-xs text-gray-500">
+              Best match: {{ Math.round(announcement.matches[0].confidence * 100) }}% confidence
+            </div>
+          </div>
+        </div>
+        <div class="flex items-center space-x-1">
+          <div 
+            v-for="(match, index) in announcement.matches.slice(0, 3)" 
+            :key="match.matchedAnnouncementId"
+            class="w-2 h-2 rounded-full"
+            :class="{
+              'bg-green-500': match.confidence >= 0.8,
+              'bg-yellow-500': match.confidence >= 0.6 && match.confidence < 0.8,
+              'bg-orange-500': match.confidence >= 0.4 && match.confidence < 0.6,
+              'bg-red-500': match.confidence < 0.4
+            }"
+            :title="`Match ${index + 1}: ${Math.round(match.confidence * 100)}% confidence`"
+          ></div>
+          <span v-if="announcement.matches.length > 3" class="text-xs text-gray-400 ml-1">
+            +{{ announcement.matches.length - 3 }}
+          </span>
+        </div>
+      </div>
+    </div>
+
     <!-- Footer with Action Buttons -->
     <template #footer>
       <div class="flex items-center justify-between space-x-3">

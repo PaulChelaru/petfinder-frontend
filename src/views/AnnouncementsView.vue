@@ -101,6 +101,7 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useToastStore } from '@/stores/toast'
 import { announcementApi } from '@/api/announcements'
+import { getAnnouncementMatches } from '@/api/matches'
 
 import NavBar from '@/layouts/NavBar.vue'
 import ActionButton from '@/components/buttons/ActionButton.vue'
@@ -184,6 +185,9 @@ const loadAnnouncements = async () => {
       announcements.value = response.data.announcements || []
       pagination.total = response.data.pagination?.total || 0
       pagination.page = response.data.pagination?.page || 1
+      
+      // Load matches for each announcement
+      await loadMatchesForAnnouncements()
     }
     
   } catch (error) {
@@ -198,6 +202,33 @@ const loadAnnouncements = async () => {
     if (currentRequest && !currentRequest.signal.aborted) {
       loading.value = false
       currentRequest = null
+    }
+  }
+}
+
+// Load matches for all announcements
+const loadMatchesForAnnouncements = async () => {
+  console.log('Loading matches for', announcements.value.length, 'announcements')
+  
+  for (const announcement of announcements.value) {
+    try {
+      const matchesResponse = await getAnnouncementMatches(announcement.announcementId)
+      if (matchesResponse.success && matchesResponse.data.length > 0) {
+        // Add matches info to announcement
+        announcement.matches = matchesResponse.data
+        announcement.matchCount = matchesResponse.data.length
+        announcement.topMatch = matchesResponse.data[0] // Best match
+        console.log(`Loaded ${matchesResponse.data.length} matches for announcement ${announcement.announcementId}`)
+      } else {
+        announcement.matches = []
+        announcement.matchCount = 0
+        announcement.topMatch = null
+      }
+    } catch (error) {
+      console.warn(`Failed to load matches for announcement ${announcement.announcementId}:`, error)
+      announcement.matches = []
+      announcement.matchCount = 0
+      announcement.topMatch = null
     }
   }
 }

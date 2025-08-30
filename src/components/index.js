@@ -23,3 +23,7 @@ export * from './sections'
 
 // UI
 export * from './ui'
+
+// Other components
+export { default as MatchesList } from './MatchesList.vue'
+export { default as LoadingSpinner } from './LoadingSpinner.vue'

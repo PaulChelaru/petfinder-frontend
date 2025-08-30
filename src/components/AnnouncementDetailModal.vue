@@ -188,6 +188,23 @@
             Share
           </BaseButton>
         </div>
+
+        <!-- Test Matches Section - Always visible -->
+        <div class="mt-8 pt-6 border-t border-gray-200 bg-blue-50 p-4 rounded">
+          <h3 class="text-lg font-semibold text-blue-900 mb-4">🔍 Test Potriviri găsite</h3>
+          <p class="text-blue-700">Announcement ID: {{ announcement?.announcementId || 'N/A' }}</p>
+          <p class="text-blue-700">Modal open: {{ isOpen }}</p>
+          <p class="text-blue-700">Matches count: {{ matches?.length || 0 }}</p>
+          <p class="text-blue-700">Loading: {{ matchesLoading }}</p>
+          <p class="text-blue-700">Error: {{ matchesError || 'None' }}</p>
+          
+          <div v-if="matches && matches.length > 0" class="mt-4">
+            <div v-for="match in matches" :key="match.matchId" class="bg-white p-2 rounded mb-2">
+              <p class="font-semibold">{{ match.matchedAnnouncement.petName }}</p>
+              <p class="text-sm">Confidence: {{ Math.round(match.confidence * 100) }}%</p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -201,8 +218,12 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import BaseButton from './buttons/BaseButton.vue'
+import MatchesList from './MatchesList.vue'
+import { useMatches } from '../composables/useMatches.js'
+
+console.log('AnnouncementDetailModal loaded')
 
 const props = defineProps({
   isOpen: {
@@ -215,9 +236,40 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['close'])
+const emit = defineEmits(['close', 'selectMatch'])
 
 const selectedImage = ref(null)
+
+// Matches functionality
+const { 
+  matches, 
+  loading: matchesLoading, 
+  error: matchesError,
+  fetchAnnouncementMatches,
+  clearMatches
+} = useMatches()
+
+console.log('useMatches loaded:', { matches: matches.value, loading: matchesLoading.value })
+
+// Watch for announcement changes to fetch matches
+watch(() => props.announcement?.announcementId, (newId) => {
+  console.log('Announcement ID changed:', newId, 'Modal open:', props.isOpen)
+  if (newId && props.isOpen) {
+    console.log('Fetching matches for:', newId)
+    fetchAnnouncementMatches(newId)
+  }
+}, { immediate: true })
+
+// Watch for modal open/close
+watch(() => props.isOpen, (isOpen) => {
+  console.log('Modal open state changed:', isOpen)
+  if (isOpen && props.announcement?.announcementId) {
+    console.log('Fetching matches for announcement:', props.announcement.announcementId)
+    fetchAnnouncementMatches(props.announcement.announcementId)
+  } else if (!isOpen) {
+    clearMatches()
+  }
+})
 
 const typeClasses = computed(() => {
   if (!props.announcement?.type) return 'bg-gray-100 text-gray-700'
@@ -232,6 +284,7 @@ const typeClasses = computed(() => {
 
 const closeModal = () => {
   emit('close')
+  clearMatches()
 }
 
 const openImageModal = (image) => {
@@ -240,6 +293,10 @@ const openImageModal = (image) => {
 
 const closeImageModal = () => {
   selectedImage.value = null
+}
+
+const handleMatchSelect = (match) => {
+  emit('selectMatch', match)
 }
 
 const formatType = (type) => {
