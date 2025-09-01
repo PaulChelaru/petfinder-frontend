@@ -34,7 +34,7 @@
             </div>
             
             <button
-              @click="$emit('close')"
+              @click="handleClose"
               class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-all duration-200 transform hover:scale-105"
             >
               <i class="fas fa-times text-xl"></i>
@@ -238,7 +238,7 @@
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pt-8 border-t border-gray-200 mt-8">
           <div class="flex">
             <ActionButton 
-              @click="$emit('close')" 
+              @click="handleClose" 
               variant="outline"
               size="md"
               class="whitespace-nowrap"
@@ -326,6 +326,29 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['close', 'edit', 'resolve', 'delete'])
+
+// Close handler with logging
+const handleClose = () => {
+  console.log('=== DETAIL MODAL CLOSE BUTTON CLICKED ===')
+  console.log('Announcement being closed:', props.announcement?.id)
+  console.log('About to emit close event...')
+  console.log('🎯 EMITTING CLOSE EVENT TO PARENT!')
+  emit('close')
+  console.log('✅ Close event emitted!')
+  console.log('🔍 Parent should receive this event and call handleCloseDetailModal')
+  
+  // BACKUP: Also emit global event directly since Vue event seems to be lost
+  console.log('🚨 BACKUP: Emitting global detail-modal-closed event directly!')
+  if (props.announcement?.id) {
+    window.dispatchEvent(new CustomEvent('detail-modal-closed', { 
+      detail: { announcementId: props.announcement.id }
+    }))
+    console.log('✅ Global event dispatched for announcement:', props.announcement.id)
+  } else {
+    window.dispatchEvent(new CustomEvent('detail-modal-closed'))
+    console.log('✅ Generic global event dispatched')
+  }
+}
 
 // Debug - să vedem ce primim
 console.log('AnnouncementDetailModal - received announcement:', props.announcement)

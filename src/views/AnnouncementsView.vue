@@ -50,6 +50,9 @@
             @view="handleViewAnnouncement"
             @edit="handleEditAnnouncement"
             @resolve="handleResolveAnnouncement"
+            @view-announcement="handleViewAnnouncement"
+            @detail-modal-closed="handleDetailModalClosed"
+            @refresh-matches="handleRefreshMatches"
           />
         </div>
 
@@ -80,9 +83,10 @@
     <AnnouncementDetailModal
       v-if="viewingAnnouncement"
       :announcement="viewingAnnouncement"
-      @close="viewingAnnouncement = null"
+      @close="handleCloseDetailModal"
       @edit="handleEditAnnouncement"
       @resolve="handleResolveAnnouncement"
+      ref="detailModal"
     />
 
     <!-- Resolve Modal -->
@@ -262,9 +266,41 @@ const handleResetFilters = () => {
   loadAnnouncements()
 }
 
-const handleViewAnnouncement = (announcement) => {
-  console.log('AnnouncementsView - setting viewingAnnouncement:', announcement)
-  viewingAnnouncement.value = announcement
+const handleViewAnnouncement = async (announcementOrId) => {
+  console.log('=== ANNOUNCEMENTS VIEW - OPENING DETAIL MODAL ===')
+  console.log('Received announcement data:', announcementOrId)
+  
+  // If it's a string ID, fetch the announcement
+  if (typeof announcementOrId === 'string') {
+    console.log('Fetching announcement by ID:', announcementOrId)
+    try {
+      const { data } = await announcementApi.getById(announcementOrId)
+      console.log('Fetched announcement data:', data.id)
+      viewingAnnouncement.value = data
+    } catch (error) {
+      console.error('Error fetching announcement:', error)
+      toastStore.showError('Failed to load announcement details')
+    }
+  } else if (announcementOrId && typeof announcementOrId === 'object') {
+    // It's already an announcement/match object with all data
+    console.log('Using provided announcement object with ID:', announcementOrId.id || announcementOrId.announcementId)
+    viewingAnnouncement.value = announcementOrId
+  } else {
+    console.error('Invalid announcement data received:', announcementOrId)
+  }
+}
+
+const handleRefreshMatches = async (announcementId) => {
+  try {
+    toastStore.showInfo('Searching for new matches...')
+    // Here you would typically call a refresh matches API
+    // For now, we'll just reload the announcements to get updated matches
+    await loadAnnouncements()
+    toastStore.showSuccess('Matches refreshed successfully')
+  } catch (error) {
+    console.error('Error refreshing matches:', error)
+    toastStore.showError('Failed to refresh matches')
+  }
 }
 
 const handleEditAnnouncement = (announcement) => {
@@ -324,6 +360,29 @@ const handleCloseModal = () => {
   editingAnnouncement.value = null
 }
 
+const handleCloseDetailModal = () => {
+  console.log('🚪 === ANNOUNCEMENTS VIEW - CLOSING DETAIL MODAL ===')
+  console.log('🎉 RECEIVED CLOSE EVENT FROM DETAIL MODAL!')
+  const previouslyViewing = viewingAnnouncement.value
+  console.log('Previously viewing announcement:', previouslyViewing?.id)
+  
+  viewingAnnouncement.value = null
+  
+  // Find and call the detail modal closed handler for the specific announcement
+  if (previouslyViewing && previouslyViewing.id) {
+    console.log('📢 EMITTING detail-modal-closed event for announcement:', previouslyViewing.id)
+    // Emit a more specific event with the announcement ID
+    window.dispatchEvent(new CustomEvent('detail-modal-closed', { 
+      detail: { announcementId: previouslyViewing.id }
+    }))
+    console.log('✅ Event dispatched successfully!')
+  } else {
+    console.log('📢 EMITTING generic detail-modal-closed event (no announcement ID)')
+    window.dispatchEvent(new CustomEvent('detail-modal-closed'))
+    console.log('✅ Generic event dispatched successfully!')
+  }
+}
+
 const handleCreateClick = () => {
   console.log('Create button clicked!')
   console.log('showCreateModal before:', showCreateModal.value)
@@ -346,6 +405,11 @@ const handleAnnouncementResolved = () => {
   loadAnnouncements()
   
   toastStore.showSuccess('Announcement resolved successfully.')
+}
+
+const handleDetailModalClosed = () => {
+  // This function is called when the detail modal is closed
+  // It helps the AnnouncementCard manage its modal stack
 }
 
 // Lifecycle

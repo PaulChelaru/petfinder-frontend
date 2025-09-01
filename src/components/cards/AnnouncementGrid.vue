@@ -8,6 +8,8 @@
         @view="$emit('view', $event)"
         @edit="$emit('edit', $event)"
         @resolve="$emit('resolve', $event)"
+        @view-announcement="$emit('view-announcement', $event)"
+        @refresh-matches="$emit('refresh-matches', $event)"
       />
     </div>
     
@@ -46,7 +48,7 @@ const props = defineProps({
   }
 })
 
-defineEmits(['view', 'edit', 'resolve'])
+defineEmits(['view', 'edit', 'resolve', 'view-announcement', 'refresh-matches'])
 
 const gridClasses = computed(() => {
   const classes = {

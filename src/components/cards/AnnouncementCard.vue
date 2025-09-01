@@ -94,38 +94,54 @@
     </div>
 
     <!-- Matches Section -->
-    <div v-if="announcement.matches && announcement.matches.length > 0" class="px-6 py-4 border-t border-gray-100 bg-gray-50">
-      <div class="flex items-center justify-between">
+    <div v-if="announcement.matches && announcement.matches.length > 0" class="px-6 py-4 border-t border-gray-100 bg-gradient-to-r from-blue-50 to-purple-50">
+      <div class="flex items-center justify-between mb-3">
         <div class="flex items-center">
-          <div class="w-8 h-8 rounded-full bg-yellow-100 flex items-center justify-center mr-3 flex-shrink-0">
-            <i class="fas fa-paw text-yellow-600 text-sm"></i>
+          <div class="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center mr-3 flex-shrink-0">
+            <i class="fas fa-magic text-white text-sm"></i>
           </div>
           <div>
-            <span class="text-sm font-medium text-gray-700">
-              {{ announcement.matches.length }} potential match{{ announcement.matches.length !== 1 ? 'es' : '' }}
+            <span class="text-sm font-semibold text-gray-800">
+              🎯 {{ announcement.matches.length }} potential match{{ announcement.matches.length !== 1 ? 'es found' : ' found' }}
             </span>
-            <div v-if="announcement.matches[0]" class="text-xs text-gray-500">
-              Best match: {{ Math.round(announcement.matches[0].confidence * 100) }}% confidence
+            <div v-if="announcement.matches[0]" class="text-xs text-gray-600">
+              Best match: {{ getMatchScoreDisplay(getMatchScore(announcement.matches[0])) }}% similarity
             </div>
           </div>
         </div>
-        <div class="flex items-center space-x-1">
-          <div 
-            v-for="(match, index) in announcement.matches.slice(0, 3)" 
-            :key="match.matchedAnnouncementId"
-            class="w-2 h-2 rounded-full"
-            :class="{
-              'bg-green-500': match.confidence >= 0.8,
-              'bg-yellow-500': match.confidence >= 0.6 && match.confidence < 0.8,
-              'bg-orange-500': match.confidence >= 0.4 && match.confidence < 0.6,
-              'bg-red-500': match.confidence < 0.4
-            }"
-            :title="`Match ${index + 1}: ${Math.round(match.confidence * 100)}% confidence`"
-          ></div>
-          <span v-if="announcement.matches.length > 3" class="text-xs text-gray-400 ml-1">
-            +{{ announcement.matches.length - 3 }}
-          </span>
+        <button 
+          @click.stop="openMatchesModal"
+          class="bg-gradient-to-r from-blue-500 to-purple-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:from-blue-600 hover:to-purple-600 transition-all duration-200 flex items-center gap-2 shadow-md hover:shadow-lg"
+        >
+          <i class="fas fa-search-plus"></i>
+          View All Matches
+        </button>
+      </div>
+    </div>
+
+    <!-- No Matches Section -->
+    <div v-else class="px-6 py-4 border-t border-gray-100 bg-gradient-to-r from-gray-50 to-blue-50">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center">
+          <div class="w-8 h-8 rounded-full bg-gray-400 flex items-center justify-center mr-3 flex-shrink-0">
+            <i class="fas fa-search text-white text-sm"></i>
+          </div>
+          <div>
+            <span class="text-sm font-medium text-gray-700">
+              🔍 No matches found yet
+            </span>
+            <div class="text-xs text-gray-500 mt-1">
+              Our matching system is continuously searching for matches
+            </div>
+          </div>
         </div>
+        <button 
+          @click.stop="refreshMatches"
+          class="bg-gray-400 hover:bg-gray-500 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 flex items-center gap-1.5 shadow-sm hover:shadow-md"
+        >
+          <i class="fas fa-sync-alt text-xs"></i>
+          Check Again
+        </button>
       </div>
     </div>
 
@@ -163,11 +179,20 @@
       </div>
     </template>
   </BaseCard>
+
+  <!-- Matches Modal -->
+  <MatchesModal
+    :is-open="isMatchesModalVisible"
+    :matches="announcement.matches || []"
+    @close="closeMatchesModal"
+    @view-announcement="handleViewAnnouncement"
+  />
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref, onMounted, onUnmounted, watch } from 'vue'
 import BaseCard from './BaseCard.vue'
+import MatchesModal from '../modals/MatchesModal.vue'
 import { getImageUrl } from '../../services/announcementService.js'
 
 const props = defineProps({
@@ -177,7 +202,28 @@ const props = defineProps({
   }
 })
 
-defineEmits(['view', 'edit', 'resolve'])
+const emit = defineEmits(['view', 'edit', 'resolve', 'viewMatch', 'viewAllMatches', 'view-announcement', 'refresh-matches', 'detail-modal-closed'])
+
+// Reactive data
+const showMatchesModal = ref(false)
+const hideMatchesModalTemporarily = ref(false)
+
+// Computed for matches modal visibility
+const isMatchesModalVisible = computed(() => {
+  const visible = showMatchesModal.value && !hideMatchesModalTemporarily.value
+  if (props.announcement.id) {
+    console.log(`[${props.announcement.id}] Matches modal visibility calculated:`, visible, { 
+      showMatchesModal: showMatchesModal.value, 
+      hideTemporarily: hideMatchesModalTemporarily.value 
+    })
+  }
+  return visible
+})
+
+// Helper function for match scores
+const getMatchScore = (match) => {
+  return match.matchScore || (match.confidence && match.confidence * 100) || 0
+}
 
 // Computed properties for card styling and behavior
 const cardVariant = computed(() => {
@@ -290,6 +336,31 @@ const contactInfo = computed(() => {
   return null
 })
 
+// Helper functions for match scores
+const getMatchScoreDisplay = (score) => {
+  if (score === null || score === undefined) return '0'
+  if (typeof score === 'number') {
+    return Math.round(score)
+  }
+  return '0'
+}
+
+const getMatchScoreColor = (score) => {
+  const numScore = Number(score) || 0
+  if (numScore >= 80) return 'text-emerald-600'
+  if (numScore >= 60) return 'text-yellow-600'
+  if (numScore >= 40) return 'text-orange-600'
+  return 'text-red-600'
+}
+
+const getScoreIndicatorColor = (score) => {
+  const numScore = Number(score) || 0
+  if (numScore >= 80) return 'bg-emerald-500'
+  if (numScore >= 60) return 'bg-yellow-500'
+  if (numScore >= 40) return 'bg-orange-500'
+  return 'bg-red-500'
+}
+
 const formatType = (type) => {
   if (!type) return 'Unknown'
   return type.charAt(0).toUpperCase() + type.slice(1)
@@ -317,6 +388,64 @@ const formatPetTypeForBadge = (petType) => {
   return petTypes[petType.toLowerCase()] || petType.toUpperCase()
 }
 
+// Function to view match details
+const viewMatchDetails = async (announcementId) => {
+  try {
+    emit('view-announcement', announcementId);
+  } catch (error) {
+    console.error('Error viewing match details:', error);
+  }
+}
+
+// Modal functions
+const openMatchesModal = () => {
+  console.log(`[${props.announcement.id}] Opening matches modal`)
+  // Reset any temporary hide state first
+  hideMatchesModalTemporarily.value = false
+  showMatchesModal.value = true
+}
+
+const closeMatchesModal = () => {
+  console.log(`[${props.announcement.id}] Closing matches modal`)
+  showMatchesModal.value = false
+  hideMatchesModalTemporarily.value = false // Reset the temporary hide flag
+}
+
+const handleViewAnnouncement = (announcementOrMatch) => {
+  // If MatchesModal is open, hide it temporarily
+  if (showMatchesModal.value) {
+    console.log('🔒 HIDING MATCHES MODAL TEMPORARILY for announcement:', props.announcement.id)
+    console.log('State BEFORE hiding:', {
+      showMatchesModal: showMatchesModal.value,
+      hideTemporarily: hideMatchesModalTemporarily.value
+    })
+    hideMatchesModalTemporarily.value = true
+    console.log('State AFTER hiding:', {
+      showMatchesModal: showMatchesModal.value,
+      hideTemporarily: hideMatchesModalTemporarily.value
+    })
+  }
+  console.log('=== ANNOUNCEMENT CARD - EMITTING VIEW-ANNOUNCEMENT ===')
+  console.log('Emitting for announcement/match:', announcementOrMatch?.id || announcementOrMatch?.announcementId)
+  console.log('Re-emitting to parent view...')
+  emit('view-announcement', announcementOrMatch)
+}
+
+// Function to handle when detail modal is closed
+const handleDetailModalClosed = () => {
+  // If MatchesModal was hidden temporarily, show it again
+  if (hideMatchesModalTemporarily.value) {
+    hideMatchesModalTemporarily.value = false
+    // MatchesModal will reappear since showMatchesModal is still true
+  }
+  emit('detail-modal-closed')
+}
+
+// Function to refresh matches search
+const refreshMatches = () => {
+  emit('refresh-matches', props.announcement.id)
+}
+
 const formatDate = (dateString) => {
   if (!dateString) return 'Date not available'
   
@@ -340,6 +469,48 @@ const formatDate = (dateString) => {
     return 'Invalid date'
   }
 }
+
+// Listen for global detail modal close events
+const handleGlobalDetailModalClosed = (event) => {
+  // Check if this event is for this specific announcement
+  const announcementId = event.detail?.announcementId
+  console.log('🔥 GLOBAL DETAIL MODAL CLOSED EVENT RECEIVED 🔥')
+  console.log('Event announcementId:', announcementId, 'current announcement:', props.announcement.id)
+  console.log(`[${props.announcement.id}] Current state BEFORE processing:`, {
+    showMatchesModal: showMatchesModal.value,
+    hideTemporarily: hideMatchesModalTemporarily.value
+  })
+  
+  // IMPORTANT: Restore matches modal for ANY announcement that has hideTemporarily = true
+  // This handles the case where we opened detail modal for a DIFFERENT announcement 
+  // while matches modal was open for THIS announcement
+  if (hideMatchesModalTemporarily.value) {
+    console.log('✅ RESTORING MATCHES MODAL for announcement:', props.announcement.id)
+    console.log('(This announcement had matches modal temporarily hidden)')
+    hideMatchesModalTemporarily.value = false
+    console.log('State AFTER restore:', {
+      showMatchesModal: showMatchesModal.value,
+      hideTemporarily: hideMatchesModalTemporarily.value
+    })
+  }
+}
+
+// Watchers for debugging
+watch(showMatchesModal, (newVal) => {
+  console.log(`[${props.announcement.id}] showMatchesModal changed to:`, newVal)
+})
+
+watch(hideMatchesModalTemporarily, (newVal) => {
+  console.log(`[${props.announcement.id}] hideMatchesModalTemporarily changed to:`, newVal)
+})
+
+onMounted(() => {
+  window.addEventListener('detail-modal-closed', handleGlobalDetailModalClosed)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('detail-modal-closed', handleGlobalDetailModalClosed)
+})
 </script>
 
 <style scoped>
@@ -365,6 +536,21 @@ const formatDate = (dateString) => {
 
 .announcement-card:hover {
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Improved mobile responsiveness */

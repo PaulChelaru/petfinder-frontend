@@ -62,8 +62,8 @@
                     
                     <div class="ml-4 text-right">
                         <div class="confidence-score mb-2">
-                            <div class="text-lg font-bold" :class="getConfidenceColor(match.confidence)">
-                                {{ Math.round(match.confidence * 100) }}%
+                            <div class="text-lg font-bold" :class="getConfidenceColor(match.matchScore || match.confidence)">
+                                {{ match.matchScore || Math.round((match.confidence || 0) * 100) }}%
                             </div>
                             <div class="text-xs text-gray-500">potrivire</div>
                         </div>
@@ -133,8 +133,10 @@ export default {
         },
         
         getConfidenceColor(confidence) {
-            if (confidence >= 0.8) return 'text-green-600';
-            if (confidence >= 0.6) return 'text-yellow-600';
+            // Convert matchScore (0-100) to confidence (0-1) format for comparison
+            const normalizedConfidence = confidence > 1 ? confidence / 100 : confidence;
+            if (normalizedConfidence >= 0.8) return 'text-green-600';
+            if (normalizedConfidence >= 0.6) return 'text-yellow-600';
             return 'text-red-600';
         },
         

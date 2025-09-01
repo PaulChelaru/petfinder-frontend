@@ -3,4 +3,5 @@ export { default as AnnouncementDetailModal } from './AnnouncementDetailModal.vu
 export { default as AnnouncementFormModal } from './AnnouncementFormModal.vue'
 export { default as BaseModal } from './BaseModal.vue'
 export { default as ConfirmationModal } from './ConfirmationModal.vue'
+export { default as MatchesModal } from './MatchesModal.vue'
 export { default as ResolveAnnouncementModal } from './ResolveAnnouncementModal.vue'

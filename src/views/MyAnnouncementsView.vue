@@ -88,6 +88,8 @@
             @view="handleViewAnnouncement"
             @edit="handleEditAnnouncement"
             @resolve="handleResolveAnnouncement"
+            @view-announcement="handleViewAnnouncement"
+            @refresh-matches="handleRefreshMatches"
           />
         </div>
 
@@ -316,8 +318,35 @@ const resetFilters = () => {
   loadAnnouncements()
 }
 
-const handleViewAnnouncement = (announcement) => {
-  viewingAnnouncement.value = announcement
+const handleViewAnnouncement = async (announcementOrId) => {
+  // If it's a string ID, fetch the announcement
+  if (typeof announcementOrId === 'string') {
+    try {
+      const { data } = await announcementApi.getById(announcementOrId)
+      viewingAnnouncement.value = data
+    } catch (error) {
+      console.error('Error fetching announcement:', error)
+      toastStore.showError('Failed to load announcement details')
+    }
+  } else if (announcementOrId && typeof announcementOrId === 'object') {
+    // It's already an announcement/match object with all data
+    viewingAnnouncement.value = announcementOrId
+  } else {
+    console.error('Invalid announcement data received:', announcementOrId)
+  }
+}
+
+const handleRefreshMatches = async (announcementId) => {
+  try {
+    toastStore.showInfo('Searching for new matches...')
+    // Here you would typically call a refresh matches API
+    // For now, we'll just reload the announcements to get updated matches
+    await loadAnnouncements()
+    toastStore.showSuccess('Matches refreshed successfully')
+  } catch (error) {
+    console.error('Error refreshing matches:', error)
+    toastStore.showError('Failed to refresh matches')
+  }
 }
 
 const handleEditAnnouncement = (announcement) => {
