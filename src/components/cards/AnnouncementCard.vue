@@ -121,27 +121,18 @@
 
     <!-- No Matches Section -->
     <div v-else class="px-6 py-4 border-t border-gray-100 bg-gradient-to-r from-gray-50 to-blue-50">
-      <div class="flex items-center justify-between">
-        <div class="flex items-center">
-          <div class="w-8 h-8 rounded-full bg-gray-400 flex items-center justify-center mr-3 flex-shrink-0">
-            <i class="fas fa-search text-white text-sm"></i>
-          </div>
-          <div>
-            <span class="text-sm font-medium text-gray-700">
-              🔍 No matches found yet
-            </span>
-            <div class="text-xs text-gray-500 mt-1">
-              Our matching system is continuously searching for matches
-            </div>
+      <div class="flex items-center mb-3" style="min-height: 40px;">
+        <div class="w-8 h-8 rounded-full bg-gray-400 flex items-center justify-center mr-3 flex-shrink-0">
+          <i class="fas fa-search text-white text-sm"></i>
+        </div>
+        <div class="flex-1">
+          <span class="text-sm font-medium text-gray-700">
+            🔍 No matches found yet
+          </span>
+          <div class="text-xs text-gray-500 mt-1">
+            Our matching system is continuously searching for matches
           </div>
         </div>
-        <button 
-          @click.stop="refreshMatches"
-          class="bg-gray-400 hover:bg-gray-500 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 flex items-center gap-1.5 shadow-sm hover:shadow-md"
-        >
-          <i class="fas fa-sync-alt text-xs"></i>
-          Check Again
-        </button>
       </div>
     </div>
 
