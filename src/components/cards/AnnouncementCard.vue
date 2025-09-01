@@ -94,7 +94,7 @@
     </div>
 
     <!-- Matches Section -->
-    <div v-if="announcement.matches && announcement.matches.length > 0" class="px-6 py-4 border-t border-gray-100 bg-gradient-to-r from-blue-50 to-purple-50">
+    <div v-if="announcement.isOwner && announcement.matches && announcement.matches.length > 0" class="px-6 py-4 border-t border-gray-100 bg-gradient-to-r from-blue-50 to-purple-50">
       <div class="flex items-center justify-between mb-3">
         <div class="flex items-center">
           <div class="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center mr-3 flex-shrink-0">
@@ -120,7 +120,7 @@
     </div>
 
     <!-- No Matches Section -->
-    <div v-else class="px-6 py-4 border-t border-gray-100 bg-gradient-to-r from-gray-50 to-blue-50">
+    <div v-else-if="announcement.isOwner && (!announcement.matches || announcement.matches.length === 0)" class="px-6 py-4 border-t border-gray-100 bg-gradient-to-r from-gray-50 to-blue-50">
       <div class="flex items-center mb-3" style="min-height: 40px;">
         <div class="w-8 h-8 rounded-full bg-gray-400 flex items-center justify-center mr-3 flex-shrink-0">
           <i class="fas fa-search text-white text-sm"></i>
