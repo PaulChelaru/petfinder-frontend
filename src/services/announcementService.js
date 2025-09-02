@@ -70,16 +70,77 @@ const apiRequest = async (url, options = {}) => {
 export const processAnnouncementData = (formData) => {
   const processed = { ...formData }
   
-  // Process location data
-  if (processed.locationCoordinates && Array.isArray(processed.locationCoordinates)) {
+  console.log('Processing announcement data:', JSON.stringify(processed, null, 2))
+  
+  // Process location data to match backend validation schema
+  if (processed.locationCoordinates && 
+      (Array.isArray(processed.locationCoordinates) || 
+       (typeof processed.locationCoordinates === 'object' && 
+        processed.locationCoordinates.longitude !== undefined && 
+        processed.locationCoordinates.latitude !== undefined))) {
+    
+    console.log('Found coordinates:', processed.locationCoordinates)
+    
+    let longitude, latitude
+    
+    // Handle both array format [lng, lat] and object format {longitude, latitude}
+    if (Array.isArray(processed.locationCoordinates)) {
+      longitude = processed.locationCoordinates[0]
+      latitude = processed.locationCoordinates[1]
+    } else {
+      longitude = processed.locationCoordinates.longitude
+      latitude = processed.locationCoordinates.latitude
+    }
+    
+    // Backend expects location with coordinates.latitude and coordinates.longitude
     processed.location = {
-      address: processed.locationName || processed.locationDetails?.address || '',
+      address: processed.locationDetails?.address || processed.locationName || '',
       coordinates: {
-        latitude: processed.locationCoordinates[1] || 0,
-        longitude: processed.locationCoordinates[0] || 0
+        longitude: parseFloat(longitude),
+        latitude: parseFloat(latitude)
       }
     }
+    
+    // Add city and state as separate fields if available
+    if (processed.locationDetails?.city) {
+      processed.location.city = processed.locationDetails.city
+    }
+    if (processed.locationDetails?.state) {
+      processed.location.state = processed.locationDetails.state
+    }
+    
     delete processed.locationCoordinates
+    delete processed.locationDetails
+    delete processed.locationName
+  } else {
+    console.error('Missing or invalid coordinates:', processed.locationCoordinates)
+    console.log('LocationDetails:', processed.locationDetails)
+    
+    // FALLBACK: If no coordinates but we have city/state, use Romania center
+    if (processed.locationDetails?.city && processed.locationDetails?.state) {
+      console.log('Creating fallback coordinates for Romania center')
+      processed.location = {
+        address: processed.locationDetails?.address || processed.locationName || '',
+        coordinates: {
+          longitude: 24.9668,  // Romania center longitude
+          latitude: 45.9432    // Romania center latitude
+        }
+      }
+      
+      if (processed.locationDetails?.city) {
+        processed.location.city = processed.locationDetails.city
+      }
+      if (processed.locationDetails?.state) {
+        processed.location.state = processed.locationDetails.state
+      }
+      
+      delete processed.locationCoordinates
+      delete processed.locationDetails
+      delete processed.locationName
+    } else {
+      console.error('Cannot create announcement without location data')
+      throw new Error('Location coordinates are required. Please use current location or enter a valid address.')
+    }
   }
   
   // Ensure contact info is properly structured and valid

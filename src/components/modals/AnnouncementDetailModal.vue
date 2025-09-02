@@ -163,25 +163,25 @@
                 <p class="font-semibold text-gray-900 text-lg">{{ locationText }}</p>
                 
                 <!-- Detailed location information -->
-                <div class="space-y-2">
-                  <div v-if="props.announcement?.locationDetails?.address" class="flex items-start">
-                    <span class="text-sm font-medium text-gray-500 w-20 flex-shrink-0">Address:</span>
+                <div class="space-y-3">
+                  <div v-if="props.announcement?.locationDetails?.address" class="flex items-start space-x-3">
+                    <span class="text-sm font-medium text-gray-500 min-w-[80px] flex-shrink-0">Address:</span>
                     <span class="text-sm text-gray-700">{{ props.announcement.locationDetails.address }}</span>
                   </div>
-                  <div class="flex gap-6">
-                    <div v-if="props.announcement?.locationDetails?.city" class="flex items-start">
-                      <span class="text-sm font-medium text-gray-500 w-12 flex-shrink-0">City:</span>
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div v-if="props.announcement?.locationDetails?.city" class="flex items-start space-x-3">
+                      <span class="text-sm font-medium text-gray-500 min-w-[50px] flex-shrink-0">City:</span>
                       <span class="text-sm text-gray-700">{{ props.announcement.locationDetails.city }}</span>
                     </div>
-                    <div v-if="props.announcement?.locationDetails?.state" class="flex items-start">
-                      <span class="text-sm font-medium text-gray-500 w-12 flex-shrink-0">State:</span>
+                    <div v-if="props.announcement?.locationDetails?.state" class="flex items-start space-x-3">
+                      <span class="text-sm font-medium text-gray-500 min-w-[50px] flex-shrink-0">County:</span>
                       <span class="text-sm text-gray-700">{{ props.announcement.locationDetails.state }}</span>
                     </div>
                   </div>
                   <!-- Show coordinates if available -->
-                  <div v-if="props.announcement?.location?.coordinates" class="flex items-start">
-                    <span class="text-sm font-medium text-gray-500 w-20 flex-shrink-0">Coordinates:</span>
-                    <span class="text-sm text-gray-600">{{ formatCoordinates(props.announcement.location.coordinates) }}</span>
+                  <div v-if="props.announcement?.location?.coordinates" class="flex items-start space-x-3">
+                    <span class="text-sm font-medium text-gray-500 min-w-[80px] flex-shrink-0">Coordinates:</span>
+                    <span class="text-sm text-gray-600 break-all">{{ formatCoordinates(props.announcement.location.coordinates) }}</span>
                   </div>
                 </div>
               </div>
@@ -497,9 +497,25 @@ const locationText = computed(() => {
 
 // Methods
 const formatCoordinates = (coordinates) => {
-  if (!coordinates || coordinates.length < 2) return ''
-  // coordinates are [longitude, latitude] in GeoJSON format
-  return `${coordinates[1].toFixed(6)}, ${coordinates[0].toFixed(6)} (lat, lng)`
+  if (!coordinates) return ''
+  
+  let lat, lng
+  
+  // Handle both object format {latitude: x, longitude: y} and array format [lng, lat]
+  if (typeof coordinates === 'object' && !Array.isArray(coordinates)) {
+    lat = coordinates.latitude
+    lng = coordinates.longitude
+  } else if (Array.isArray(coordinates) && coordinates.length >= 2) {
+    // coordinates are [longitude, latitude] in GeoJSON format
+    lat = coordinates[1]
+    lng = coordinates[0]
+  } else {
+    return ''
+  }
+  
+  if (lat === undefined || lng === undefined) return ''
+  
+  return `${parseFloat(lat).toFixed(6)}, ${parseFloat(lng).toFixed(6)} (lat, lng)`
 }
 
 const formattedDate = computed(() => {

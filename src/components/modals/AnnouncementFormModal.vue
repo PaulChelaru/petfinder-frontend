@@ -118,22 +118,23 @@
         </div>
 
         <!-- Location -->
+        <!-- Address -->
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-2">
-            Location <span class="text-red-500">*</span>
+            Address <span class="text-red-500">*</span>
           </label>
-          <div class="flex space-x-2">
+          <div class="flex gap-2">
             <input
               v-model="formData.locationName"
               type="text"
               required
               class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-              placeholder="Enter address (street, city, county) or use current location"
+                            placeholder="Enter street address and number (e.g. Bulevardul 1 decembrie 1918 nr 4)"
             />
             <button
               type="button"
               @click="getCurrentLocation"
-              class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors duration-200 flex items-center gap-2"
+              class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors duration-200 flex items-center gap-2"
               :disabled="loadingLocation"
             >
               <i v-if="loadingLocation" class="fas fa-spinner fa-spin"></i>
@@ -141,43 +142,50 @@
               <span class="hidden sm:inline">{{ loadingLocation ? 'Loading...' : 'Current' }}</span>
             </button>
           </div>
-          <p class="text-sm text-gray-500 mt-1">Enter a full address or click "Current" to use your location automatically</p>
-        </div>
-
-        <!-- Location Details -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <p class="text-sm text-gray-500 mt-1">Enter the street name and number. City and county will be filled separately below.</p>
+        </div>        <!-- Location Details -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">
-              Address/Street
-            </label>
-            <input
-              v-model="formData.locationDetails.address"
-              type="text"
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-              placeholder="Street address"
-            />
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">
-              City
+              City <span class="text-red-500">*</span>
             </label>
             <input
               v-model="formData.locationDetails.city"
               type="text"
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-              placeholder="City"
+              required
+              class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              :class="cityValidation.error ? 'border-red-500' : 'border-gray-300'"
+              placeholder="Enter city name (e.g., Suceava)"
+              @blur="validateLocation"
+              @input="debouncedGeocodeAddress"
             />
+            <p v-if="cityValidation.error" class="text-red-500 text-xs mt-1">
+              {{ cityValidation.message }}
+            </p>
+            <p v-if="cityValidation.suggestion" class="text-yellow-600 text-xs mt-1">
+              {{ cityValidation.suggestion }}
+            </p>
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">
-              State/County
+              State/County <span class="text-red-500">*</span>
             </label>
             <input
               v-model="formData.locationDetails.state"
               type="text"
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-              placeholder="State or County"
+              required
+              class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              :class="countyValidation.error ? 'border-red-500' : 'border-gray-300'"
+              placeholder="Enter county name (e.g., Suceava)"
+              @blur="validateLocation"
+              @input="debouncedGeocodeAddress"
             />
+            <p v-if="countyValidation.error" class="text-red-500 text-xs mt-1">
+              {{ countyValidation.message }}
+            </p>
+            <p v-if="countyValidation.suggestion" class="text-yellow-600 text-xs mt-1">
+              {{ countyValidation.suggestion }}
+            </p>
           </div>
         </div>
 
@@ -311,6 +319,12 @@ import {
   updateAnnouncement,
   getImageUrl 
 } from '@/services/announcementService'
+import { 
+  validateCityCountyPair, 
+  isValidRomanianCity, 
+  isValidRomanianCounty,
+  getCountyForCity 
+} from '@/utils/romaniaLocations'
 
 const props = defineProps({
   isOpen: {
@@ -329,7 +343,7 @@ const isEditing = ref(false)
 const isSubmitting = ref(false)
 const loadingLocation = ref(false)
 const submitError = ref('')
-const imageData = ref({ files: [], urls: [], total: 0 })
+const imageData = ref([])
 
 const maxImages = 5
 
@@ -372,8 +386,7 @@ const formData = reactive({
   locationCoordinates: null, // Will store [longitude, latitude]
   locationDetails: {
     city: '',
-    state: '',
-    address: ''
+    state: ''
   },
   contactInfo: {
     phone: '',
@@ -381,6 +394,19 @@ const formData = reactive({
   },
   lastSeenDate: '',
   images: []
+})
+
+// Location validation state
+const cityValidation = reactive({
+  error: false,
+  message: '',
+  suggestion: ''
+})
+
+const countyValidation = reactive({
+  error: false,
+  message: '',
+  suggestion: ''
 })
 
 // Functions - defined before watchers to avoid initialization issues
@@ -396,7 +422,7 @@ const resetForm = () => {
   isEditing.value = false
   isSubmitting.value = false
   submitError.value = ''
-  imageData.value = { files: [], urls: [], total: 0 }
+  imageData.value = []
   
   Object.assign(formData, {
     type: '',
@@ -410,15 +436,17 @@ const resetForm = () => {
     locationCoordinates: null,
     locationDetails: {
       city: '',
-      state: '',
-      address: ''
+      state: ''
     },
     contactInfo: {
       phone: '',
       email: ''
     },
     lastSeenDate: '',
-    images: []
+    images: [],
+    // Reset geocoding tracking variables
+    isGeocoding: false,
+    lastGeocodedLocation: null
   })
 }
 
@@ -460,8 +488,7 @@ watch(() => props.announcement, (newAnnouncement) => {
       locationCoordinates: coordinates,
       locationDetails: {
         city: newAnnouncement.locationDetails?.city || newAnnouncement.location?.city || '',
-        state: newAnnouncement.locationDetails?.state || newAnnouncement.location?.state || '',
-        address: newAnnouncement.locationDetails?.address || newAnnouncement.location?.address || ''
+        state: newAnnouncement.locationDetails?.state || newAnnouncement.location?.state || ''
       },
       contactInfo: {
         phone: newAnnouncement.contactInfo?.phone || '',
@@ -476,11 +503,7 @@ watch(() => props.announcement, (newAnnouncement) => {
     
     // Load existing images for the upload component
     if (newAnnouncement.images && newAnnouncement.images.length > 0) {
-      imageData.value = {
-        files: [],
-        urls: newAnnouncement.images.map(img => getImageUrl(img.url || img)),
-        total: newAnnouncement.images.length
-      }
+      imageData.value = newAnnouncement.images.map(img => getImageUrl(img.url || img))
     }
   } else {
     resetForm()
@@ -546,8 +569,8 @@ const getCurrentLocation = () => {
 
 const reverseGeocode = async (latitude, longitude) => {
   try {
-    // Store coordinates for API (longitude first, then latitude)
-    formData.locationCoordinates = [longitude, latitude]
+    // Store coordinates for API (longitude, latitude object)
+    formData.locationCoordinates = { longitude, latitude }
     
     // Try OpenStreetMap Nominatim API (free)
     const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`)
@@ -584,9 +607,7 @@ const reverseGeocode = async (latitude, longitude) => {
       // Use formatted address or fall back to display_name
       formData.locationName = parts.length > 0 ? parts.join(', ') : data.display_name
       
-      // Populate detailed location fields
-      formData.locationDetails.address = address.road && address.house_number ? 
-        `${address.road} ${address.house_number}` : (address.road || '')
+      // Populate detailed location fields  
       formData.locationDetails.city = address.city || address.town || address.village || ''
       formData.locationDetails.state = address.county || address.state || ''
       
@@ -602,6 +623,390 @@ const reverseGeocode = async (latitude, longitude) => {
   }
 }
 
+// Validate location fields (city and county)
+const validateLocation = () => {
+  // Reset validation state
+  cityValidation.error = false
+  cityValidation.message = ''
+  cityValidation.suggestion = ''
+  countyValidation.error = false
+  countyValidation.message = ''
+  countyValidation.suggestion = ''
+  
+  const city = formData.locationDetails.city.trim()
+  const county = formData.locationDetails.state.trim()
+  
+  if (!city && !county) {
+    return // Don't validate empty fields
+  }
+  
+  if (city && !county) {
+    // Only city provided - check if city exists and suggest county
+    if (isValidRomanianCity(city)) {
+      const suggestedCounty = getCountyForCity(city)
+      if (suggestedCounty) {
+        countyValidation.suggestion = `Suggestion: ${city} is in ${suggestedCounty} county`
+      }
+    } else {
+      cityValidation.error = true
+      cityValidation.message = `"${city}" is not a recognized Romanian city`
+    }
+    return
+  }
+  
+  if (!city && county) {
+    // Only county provided - check if county exists
+    if (!isValidRomanianCounty(county)) {
+      countyValidation.error = true
+      countyValidation.message = `"${county}" is not a recognized Romanian county`
+    }
+    return
+  }
+  
+  // Both city and county provided - validate pair
+  if (city && county) {
+    const validation = validateCityCountyPair(city, county)
+    
+    if (!validation.cityExists) {
+      cityValidation.error = true
+      cityValidation.message = `"${city}" is not a recognized Romanian city`
+    }
+    
+    if (!validation.countyExists) {
+      countyValidation.error = true
+      countyValidation.message = `"${county}" is not a recognized Romanian county`
+    }
+    
+    if (validation.cityExists && validation.countyExists && !validation.isValid) {
+      countyValidation.error = true
+      countyValidation.message = validation.message
+      if (validation.suggestedCounty) {
+        countyValidation.suggestion = `Correct county: ${validation.suggestedCounty}`
+      }
+    }
+    
+    // Auto-correct if we have a valid city and empty/wrong county
+    if (validation.cityExists && validation.suggestedCounty && (!county || !validation.countyExists)) {
+      formData.locationDetails.state = validation.suggestedCounty
+      countyValidation.suggestion = `Auto-corrected to: ${validation.suggestedCounty}`
+    }
+    
+    // Trigger geocoding if both city and county are valid
+    if (validation.cityExists && validation.countyExists && validation.isValid) {
+      // Only trigger if we don't already have coordinates for this exact location
+      const currentLocationKey = `${formData.locationDetails.city}-${formData.locationDetails.state}-${formData.locationName || ''}`
+      
+      if (!formData.locationCoordinates || formData.lastGeocodedLocation !== currentLocationKey) {
+        setTimeout(() => {
+          geocodeAddress()
+        }, 100) // Small delay to ensure UI updates first
+      }
+    }
+  }
+}
+
+// Debounced geocoding for real-time address updates
+let geocodeTimeout = null
+const debouncedGeocodeAddress = () => {
+  if (geocodeTimeout) {
+    clearTimeout(geocodeTimeout)
+  }
+  geocodeTimeout = setTimeout(() => {
+    // Trigger geocoding if we have city and state (address is optional)
+    if (formData.locationDetails.city && formData.locationDetails.state) {
+      const currentLocationKey = `${formData.locationDetails.city}-${formData.locationDetails.state}-${formData.locationName || ''}`
+      
+      // Only geocode if location changed
+      if (formData.lastGeocodedLocation !== currentLocationKey) {
+        geocodeAddress()
+      }
+    }
+  }, 1000) // Wait 1 second after user stops typing
+}
+
+// Enhanced geocoding with OpenStreetMap
+const geocodeAddress = async () => {
+  // Only geocode if we have at least city and state
+  if (!formData.locationDetails.city || !formData.locationDetails.state) {
+    return
+  }
+  
+  // Check if we're already in the process of geocoding to prevent loops
+  if (formData.isGeocoding) {
+    return
+  }
+  
+  // Create location key to track if we already geocoded this exact location
+  const currentLocationKey = `${formData.locationDetails.city}-${formData.locationDetails.state}-${formData.locationName || ''}`
+  if (formData.lastGeocodedLocation === currentLocationKey && formData.locationCoordinates) {
+    return
+  }
+  
+  formData.isGeocoding = true
+  
+  try {
+    // Try multiple query strategies for better results
+    let coordinates = await tryOpenStreetMapGeocoding()
+    
+    if (coordinates) {
+      formData.locationCoordinates = coordinates
+      formData.lastGeocodedLocation = currentLocationKey
+      console.log('Geocoding successful:', {
+        coordinates: formData.locationCoordinates,
+        source: coordinates.source,
+        accuracy: coordinates.accuracy
+      })
+      
+      // Update the main location name if not already set
+      if (!formData.locationName) {
+        const addressParts = []
+        if (formData.locationDetails.city) addressParts.push(formData.locationDetails.city)
+        if (formData.locationDetails.state) addressParts.push(formData.locationDetails.state)
+        formData.locationName = addressParts.join(', ')
+      }
+    } else {
+      // Try one final fallback - get coordinates for just the city if available
+      console.log('Primary geocoding failed, trying enhanced city-only fallback')
+      let fallbackCoordinates = null
+      
+      if (formData.locationDetails.city) {
+        try {
+          // Use structured search for better city matching
+          const fallbackParams = new URLSearchParams({
+            format: 'json',
+            city: formData.locationDetails.city,
+            country: 'Romania',
+            countrycodes: 'ro',
+            limit: '3',
+            featureType: 'settlement',
+            addressdetails: '1'
+          })
+          
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/search?${fallbackParams}`,
+            {
+              headers: {
+                'User-Agent': 'PetFinder-App/1.0 (Contact: your-email@domain.com)'
+              }
+            }
+          )
+          
+          if (response.ok) {
+            const data = await response.json()
+            if (data && data.length > 0) {
+              // Find the best city match - prefer administrative places
+              const cityResult = data.find(result => 
+                result.class === 'place' && (
+                  result.type === 'city' || 
+                  result.type === 'town' || 
+                  result.type === 'village' ||
+                  result.type === 'municipality'
+                )
+              ) || data[0]
+              
+              fallbackCoordinates = {
+                longitude: parseFloat(cityResult.lon),
+                latitude: parseFloat(cityResult.lat)
+              }
+              console.log(`Enhanced fallback successful for city: ${formData.locationDetails.city}`, {
+                coordinates: fallbackCoordinates,
+                display_name: cityResult.display_name,
+                type: cityResult.type
+              })
+            }
+          }
+        } catch (error) {
+          console.log('Enhanced city fallback also failed:', error.message)
+        }
+      }
+      
+      if (fallbackCoordinates) {
+        formData.locationCoordinates = fallbackCoordinates
+      } else {
+        // Final fallback to Romania center
+        console.log('All geocoding attempts failed, using Romania center')
+        formData.locationCoordinates = { longitude: 24.9668, latitude: 45.9432 } // Romania center
+      }
+      
+      formData.lastGeocodedLocation = currentLocationKey
+    }
+    
+  } catch (error) {
+    console.error('Geocoding failed:', error)
+    formData.locationCoordinates = { longitude: 24.9668, latitude: 45.9432 } // Romania center
+    formData.lastGeocodedLocation = currentLocationKey
+  } finally {
+    formData.isGeocoding = false
+  }
+}
+
+// Enhanced OpenStreetMap geocoding with simple rate limiting
+let lastOpenStreetMapCall = 0
+const OPENSTREETMAP_RATE_LIMIT = 2000 // 2 seconds between calls for better reliability
+
+const tryOpenStreetMapGeocoding = async () => {
+  try {
+    // Simple rate limiting to avoid API issues
+    const now = Date.now()
+    if (now - lastOpenStreetMapCall < OPENSTREETMAP_RATE_LIMIT) {
+      const waitTime = OPENSTREETMAP_RATE_LIMIT - (now - lastOpenStreetMapCall)
+      await new Promise(resolve => setTimeout(resolve, waitTime))
+    }
+    lastOpenStreetMapCall = Date.now()
+    
+    // Create queries in order of preference using best practices from Nominatim docs
+    const queries = []
+    
+    // 1. Try structured search first (more reliable for addresses)
+    if (formData.locationName && formData.locationDetails.city && formData.locationDetails.state) {
+      // Use structured query parameters for better accuracy
+      const structuredParams = new URLSearchParams({
+        format: 'json',
+        street: formData.locationName,
+        city: formData.locationDetails.city,
+        state: formData.locationDetails.state,
+        country: 'Romania',
+        countrycodes: 'ro',
+        limit: '5',
+        addressdetails: '1'
+      })
+      queries.push({ 
+        url: `https://nominatim.openstreetmap.org/search?${structuredParams}`,
+        type: 'structured',
+        description: `Structured: ${formData.locationName}, ${formData.locationDetails.city}, ${formData.locationDetails.state}`
+      })
+    }
+    
+    // 2. Try full address as free-form query
+    if (formData.locationName && formData.locationDetails.city && formData.locationDetails.state) {
+      const freeFormQuery = `${formData.locationName}, ${formData.locationDetails.city}, ${formData.locationDetails.state}, Romania`
+      const encodedQuery = encodeURIComponent(freeFormQuery)
+      queries.push({ 
+        url: `https://nominatim.openstreetmap.org/search?format=json&q=${encodedQuery}&countrycodes=ro&limit=5&addressdetails=1`,
+        type: 'free-form',
+        description: freeFormQuery
+      })
+    }
+    
+    // 3. Try street name without number in city
+    if (formData.locationName && formData.locationDetails.city) {
+      const streetName = formData.locationName.replace(/\s+(nr\.?\s*)?\d+\s*$/, '').trim()
+      if (streetName && streetName !== formData.locationName) {
+        const streetQuery = `${streetName}, ${formData.locationDetails.city}, Romania`
+        const encodedQuery = encodeURIComponent(streetQuery)
+        queries.push({ 
+          url: `https://nominatim.openstreetmap.org/search?format=json&q=${encodedQuery}&countrycodes=ro&limit=5&layer=address`,
+          type: 'street',
+          description: streetQuery
+        })
+      }
+    }
+    
+    // 4. City with county - use featureType for better city results
+    if (formData.locationDetails.city && formData.locationDetails.state) {
+      const cityQuery = `${formData.locationDetails.city}, ${formData.locationDetails.state}, Romania`
+      const encodedQuery = encodeURIComponent(cityQuery)
+      queries.push({ 
+        url: `https://nominatim.openstreetmap.org/search?format=json&q=${encodedQuery}&countrycodes=ro&limit=5&featureType=city&addressdetails=1`,
+        type: 'city-county',
+        description: cityQuery
+      })
+    }
+    
+    // 5. Just city with settlement feature type
+    if (formData.locationDetails.city) {
+      const cityOnlyQuery = `${formData.locationDetails.city}, Romania`
+      const encodedQuery = encodeURIComponent(cityOnlyQuery)
+      queries.push({ 
+        url: `https://nominatim.openstreetmap.org/search?format=json&q=${encodedQuery}&countrycodes=ro&limit=5&featureType=settlement&addressdetails=1`,
+        type: 'city-only',
+        description: cityOnlyQuery
+      })
+    }
+    
+    console.log('Trying geocoding queries:', queries.map(q => `${q.type}: ${q.description}`))
+    
+    // Try each query
+    for (let i = 0; i < queries.length; i++) {
+      const query = queries[i]
+      try {
+        const response = await fetch(query.url, {
+          headers: {
+            'User-Agent': 'PetFinder-App/1.0 (Contact: your-email@domain.com)' // Recommended by Nominatim docs
+          }
+        })
+        
+        if (response.ok) {
+          const data = await response.json()
+          
+          if (data && data.length > 0) {
+            let bestResult = data[0]
+            
+            // For city-level queries, prefer administrative places
+            if (query.type.includes('city')) {
+              const adminResults = data.filter(result => 
+                result.class === 'place' && (
+                  result.type === 'city' || 
+                  result.type === 'town' || 
+                  result.type === 'village' ||
+                  result.type === 'municipality'
+                )
+              )
+              if (adminResults.length > 0) {
+                // Sort by importance and pick the best
+                bestResult = adminResults.sort((a, b) => (b.importance || 0) - (a.importance || 0))[0]
+              }
+            }
+            
+            // For street queries, prefer roads or addresses
+            if (query.type === 'street' || query.type === 'structured') {
+              const addressResults = data.filter(result => 
+                result.class === 'highway' || 
+                result.class === 'place' ||
+                result.type === 'road' ||
+                result.type === 'residential'
+              )
+              if (addressResults.length > 0) {
+                bestResult = addressResults[0]
+              }
+            }
+            
+            console.log(`Geocoding successful with ${query.type} query: "${query.description}"`, {
+              result: bestResult,
+              coordinates: { lon: bestResult.lon, lat: bestResult.lat },
+              display_name: bestResult.display_name,
+              importance: bestResult.importance
+            })
+            
+            return {
+              longitude: parseFloat(bestResult.lon),
+              latitude: parseFloat(bestResult.lat),
+              source: 'OpenStreetMap',
+              accuracy: query.type === 'structured' ? 'address' : 
+                       query.type === 'free-form' ? 'address' :
+                       query.type === 'street' ? 'street' : 'city',
+              display_name: bestResult.display_name,
+              query_type: query.type
+            }
+          }
+        } else {
+          console.log(`Query ${i + 1} failed with status:`, response.status)
+        }
+      } catch (error) {
+        console.log(`Query ${i + 1} failed:`, error.message)
+        continue
+      }
+    }
+    
+    console.log('All geocoding queries failed')
+    return null
+    
+  } catch (error) {
+    console.error('Geocoding error:', error)
+    return null
+  }
+}
+
 // Form submission using new modular approach
 const handleSubmit = async () => {
   console.log('handleSubmit called with formData:', formData)
@@ -611,6 +1016,20 @@ const handleSubmit = async () => {
   submitError.value = ''
 
   try {
+    // Ensure we have coordinates before processing
+    if (!formData.locationCoordinates && formData.locationDetails?.city) {
+      console.log('No coordinates found, attempting geocoding before submission...')
+      await geocodeAddress()
+    }
+    
+    // If still no coordinates after geocoding attempt, ensure fallback
+    if (!formData.locationCoordinates) {
+      console.log('Setting fallback coordinates before submission')
+      formData.locationCoordinates = { longitude: 24.9668, latitude: 45.9432 } // Romania center
+    }
+    
+    console.log('Final coordinates before processing:', formData.locationCoordinates)
+    
     // Process the form data
     const processedData = processAnnouncementData(formData)
     console.log('processedData:', processedData)
@@ -628,8 +1047,8 @@ const handleSubmit = async () => {
       // For creation, use FormData with images
       const submissionFormData = createAnnouncementFormData(
         processedData, 
-        imageData.value.files || [], 
-        imageData.value.urls || []
+        imageData.value || [], 
+        [] // Existing images - nu sunt files noi în acest caz
       )
       
       // Debug: Log FormData contents
@@ -656,7 +1075,6 @@ const handleSubmit = async () => {
 
 onMounted(() => {
   // Any initialization logic can go here
-  console.log('AnnouncementFormModal mounted')
 })
 </script>
 

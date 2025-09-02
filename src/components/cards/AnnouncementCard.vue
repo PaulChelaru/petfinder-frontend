@@ -202,12 +202,6 @@ const hideMatchesModalTemporarily = ref(false)
 // Computed for matches modal visibility
 const isMatchesModalVisible = computed(() => {
   const visible = showMatchesModal.value && !hideMatchesModalTemporarily.value
-  if (props.announcement.id) {
-    console.log(`[${props.announcement.id}] Matches modal visibility calculated:`, visible, { 
-      showMatchesModal: showMatchesModal.value, 
-      hideTemporarily: hideMatchesModalTemporarily.value 
-    })
-  }
   return visible
 })
 
@@ -390,14 +384,12 @@ const viewMatchDetails = async (announcementId) => {
 
 // Modal functions
 const openMatchesModal = () => {
-  console.log(`[${props.announcement.id}] Opening matches modal`)
   // Reset any temporary hide state first
   hideMatchesModalTemporarily.value = false
   showMatchesModal.value = true
 }
 
 const closeMatchesModal = () => {
-  console.log(`[${props.announcement.id}] Closing matches modal`)
   showMatchesModal.value = false
   hideMatchesModalTemporarily.value = false // Reset the temporary hide flag
 }
@@ -467,10 +459,6 @@ const handleGlobalDetailModalClosed = (event) => {
   const announcementId = event.detail?.announcementId
   console.log('🔥 GLOBAL DETAIL MODAL CLOSED EVENT RECEIVED 🔥')
   console.log('Event announcementId:', announcementId, 'current announcement:', props.announcement.id)
-  console.log(`[${props.announcement.id}] Current state BEFORE processing:`, {
-    showMatchesModal: showMatchesModal.value,
-    hideTemporarily: hideMatchesModalTemporarily.value
-  })
   
   // IMPORTANT: Restore matches modal for ANY announcement that has hideTemporarily = true
   // This handles the case where we opened detail modal for a DIFFERENT announcement 
@@ -486,13 +474,13 @@ const handleGlobalDetailModalClosed = (event) => {
   }
 }
 
-// Watchers for debugging
+// Clean watchers without logging
 watch(showMatchesModal, (newVal) => {
-  console.log(`[${props.announcement.id}] showMatchesModal changed to:`, newVal)
+  // Modal state changed
 })
 
 watch(hideMatchesModalTemporarily, (newVal) => {
-  console.log(`[${props.announcement.id}] hideMatchesModalTemporarily changed to:`, newVal)
+  // Temporary hide state changed
 })
 
 onMounted(() => {
